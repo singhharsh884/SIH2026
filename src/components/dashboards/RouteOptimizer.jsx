@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { logisticsService, FALLBACK_HUBS, FALLBACK_FARMS, FALLBACK_VEHICLES } from '../../services/logisticsService';
 import { useLanguage } from '../../context/LanguageContext';
+import { DynamicMap } from '../common/DynamicMap';
 
 export const RouteOptimizer = () => {
   const { t, language } = useLanguage();
@@ -41,6 +42,7 @@ export const RouteOptimizer = () => {
 
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [routeSolution, setRouteSolution] = useState(null);
+  const [viewMode, setViewMode] = useState('map'); // 'map' | 'sequence'
 
   // Simulation state
   const [isSimulating, setIsSimulating] = useState(false);
@@ -415,8 +417,37 @@ export const RouteOptimizer = () => {
             </p>
           </div>
 
-          {/* Simulation Controls */}
-          <div className="flex items-center gap-2">
+          {/* Controls: View Switcher & Simulation */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View Mode Switcher */}
+            <div className="flex items-center bg-white/10 p-1 rounded-xl border border-white/10">
+              <button
+                type="button"
+                onClick={() => setViewMode('map')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === 'map'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md font-extrabold'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>{isHindi ? '🗺️ डायनामिक मैप' : '🗺️ Dynamic GIS Map'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('sequence')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === 'sequence'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md font-extrabold'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Navigation className="w-3.5 h-3.5" />
+                <span>{isHindi ? '📊 वे-पॉइंट क्रम' : '📊 Stop Flow'}</span>
+              </button>
+            </div>
+
+            {/* Simulation Controls */}
             <button
               type="button"
               onClick={() => setIsSimulating(!isSimulating)}
@@ -473,94 +504,155 @@ export const RouteOptimizer = () => {
           </div>
         )}
 
-        {/* SVG Waypoint Graph Canvas */}
-        <div className="relative bg-slate-900/80 rounded-2xl p-4 sm:p-6 border border-white/10 overflow-hidden min-h-[280px] flex flex-col justify-between">
-          {/* Background Map Grid Pattern */}
-          <div
-            className="absolute inset-0 opacity-15 pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)',
-              backgroundSize: '24px 24px',
-            }}
-          />
+        {/* View Mode 1: Interactive Dynamic GIS Map */}
+        {viewMode === 'map' ? (
+          <div className="space-y-4">
+            <DynamicMap
+              legs={legs}
+              activeLegIndex={activeLegIndex}
+              isSimulating={isSimulating}
+              vehicleName={currentVehicle.name}
+              onStopClick={(leg, idx) => setActiveLegIndex(idx)}
+            />
 
-          {/* Sequential Waypoint Nodes Display */}
-          <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            {legs.map((leg, idx) => {
-              const isCurrent = activeLegIndex === idx;
-              const isPassed = activeLegIndex > idx;
+            {/* Quick Waypoint Selector Stepper Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {legs.map((leg, idx) => {
+                const isCurrent = activeLegIndex === idx;
+                const isPassed = activeLegIndex > idx;
 
-              return (
-                <div
-                  key={leg.id || idx}
-                  className={`p-3.5 rounded-2xl border transition-all duration-300 relative ${
-                    isCurrent
-                      ? 'bg-emerald-900/90 border-emerald-400 shadow-lg shadow-emerald-500/20 scale-[1.03]'
-                      : isPassed
-                      ? 'bg-emerald-950/40 border-emerald-600/40 opacity-80'
-                      : 'bg-white/5 border-white/10'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`w-6 h-6 rounded-full text-xs font-black flex items-center justify-center ${
-                        isCurrent
-                          ? 'bg-emerald-400 text-slate-950 animate-bounce'
-                          : isPassed
-                          ? 'bg-emerald-700 text-white'
-                          : 'bg-white/20 text-white'
-                      }`}
-                    >
-                      {idx + 1}
-                    </span>
-                    <span className="text-[10px] font-mono text-emerald-300 font-bold">
+                return (
+                  <button
+                    key={leg.id || idx}
+                    type="button"
+                    onClick={() => setActiveLegIndex(idx)}
+                    className={`p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center justify-between ${
+                      isCurrent
+                        ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-lg ring-1 ring-emerald-400/50'
+                        : isPassed
+                        ? 'bg-white/5 border-emerald-500/30 text-emerald-200 hover:border-emerald-400/50'
+                        : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/25'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className={`w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center shrink-0 ${
+                          isCurrent
+                            ? 'bg-emerald-400 text-slate-950'
+                            : isPassed
+                            ? 'bg-emerald-700 text-white'
+                            : 'bg-white/20 text-white'
+                        }`}
+                      >
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold truncate text-white">
+                          {leg.isDestination ? `🏢 ${leg.name}` : `🌾 ${leg.farmerName || leg.name}`}
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate">
+                          {leg.crop ? `${leg.crop} (${leg.quantity})` : leg.location}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-emerald-400 shrink-0 ml-1">
                       {leg.estimatedArrival}
                     </span>
-                  </div>
-
-                  <p className="text-xs font-bold text-white line-clamp-1">
-                    {leg.isDestination ? `🏢 ${leg.name}` : `🌾 ${leg.name}`}
-                  </p>
-
-                  <p className="text-[11px] text-slate-300 mt-0.5 truncate">
-                    {leg.crop ? `${leg.crop} (${leg.quantity})` : leg.location}
-                  </p>
-
-                  <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
-                    <span className="text-emerald-300 font-mono font-semibold">
-                      {leg.currentTemperatureC}
-                    </span>
-                    <span className="text-slate-400 font-medium">
-                      +{leg.legDistanceKm} km
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+        ) : (
+          /* View Mode 2: Sequential Waypoint Nodes Display */
+          <div className="relative bg-slate-900/80 rounded-2xl p-4 sm:p-6 border border-white/10 overflow-hidden min-h-[280px] flex flex-col justify-between">
+            {/* Background Map Grid Pattern */}
+            <div
+              className="absolute inset-0 opacity-15 pointer-events-none"
+              style={{
+                backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)',
+                backgroundSize: '24px 24px',
+              }}
+            />
 
-          {/* Route Connection Pipeline Bar */}
-          <div className="relative z-10 mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-300">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-              <span>{isHindi ? 'कोल्ड-चेन सुरक्षा सक्रिय' : 'Cold-Chain Telemetry Active'}:</span>
-              <strong className="text-white font-mono">2°C - 5°C Target</strong>
+            {/* Sequential Waypoint Nodes Display */}
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              {legs.map((leg, idx) => {
+                const isCurrent = activeLegIndex === idx;
+                const isPassed = activeLegIndex > idx;
+
+                return (
+                  <div
+                    key={leg.id || idx}
+                    className={`p-3.5 rounded-2xl border transition-all duration-300 relative ${
+                      isCurrent
+                        ? 'bg-emerald-900/90 border-emerald-400 shadow-lg shadow-emerald-500/20 scale-[1.03]'
+                        : isPassed
+                        ? 'bg-emerald-950/40 border-emerald-600/40 opacity-80'
+                        : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={`w-6 h-6 rounded-full text-xs font-black flex items-center justify-center ${
+                          isCurrent
+                            ? 'bg-emerald-400 text-slate-950 animate-bounce'
+                            : isPassed
+                            ? 'bg-emerald-700 text-white'
+                            : 'bg-white/20 text-white'
+                        }`}
+                      >
+                        {idx + 1}
+                      </span>
+                      <span className="text-[10px] font-mono text-emerald-300 font-bold">
+                        {leg.estimatedArrival}
+                      </span>
+                    </div>
+
+                    <p className="text-xs font-bold text-white line-clamp-1">
+                      {leg.isDestination ? `🏢 ${leg.name}` : `🌾 ${leg.name}`}
+                    </p>
+
+                    <p className="text-[11px] text-slate-300 mt-0.5 truncate">
+                      {leg.crop ? `${leg.crop} (${leg.quantity})` : leg.location}
+                    </p>
+
+                    <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
+                      <span className="text-emerald-300 font-mono font-semibold">
+                        {leg.currentTemperatureC}
+                      </span>
+                      <span className="text-slate-400 font-medium">
+                        +{leg.legDistanceKm} km
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-slate-400">{isHindi ? 'लोड क्षमता' : 'Payload Capacity'}:</span>
-              <div className="w-32 h-2.5 bg-white/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-400 rounded-full transition-all duration-500"
-                  style={{ width: `${summary.payloadUtilizationPercent || 60}%` }}
-                />
+            {/* Route Connection Pipeline Bar */}
+            <div className="relative z-10 mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-300">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                <span>{isHindi ? 'कोल्ड-चेन सुरक्षा सक्रिय' : 'Cold-Chain Telemetry Active'}:</span>
+                <strong className="text-white font-mono">2°C - 5°C Target</strong>
               </div>
-              <span className="font-bold text-white font-mono">
-                {summary.payloadUtilizationPercent || 60}%
-              </span>
+
+              <div className="flex items-center gap-3">
+                <span className="text-slate-400">{isHindi ? 'लोड क्षमता' : 'Payload Capacity'}:</span>
+                <div className="w-32 h-2.5 bg-white/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                    style={{ width: `${summary.payloadUtilizationPercent || 60}%` }}
+                  />
+                </div>
+                <span className="font-bold text-white font-mono">
+                  {summary.payloadUtilizationPercent || 60}%
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Leg-by-Leg Dispatch Itinerary Table */}
