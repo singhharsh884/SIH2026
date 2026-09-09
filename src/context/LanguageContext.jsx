@@ -267,6 +267,25 @@ export const TRANSLATIONS = {
     mrpSavingsText: 'Savings vs Supermarket',
     noProductsInCategory: 'No crops found in this filter. Check back shortly as farmers publish lots throughout the day!',
     liveFarmerCount: 'Farmers connected live',
+
+    // Direct Farmer Contact & Phone Connectivity
+    contactFarmerBtn: 'Contact Farmer',
+    callFarmerBtn: 'Call Farmer',
+    callNowBtn: 'Call Now',
+    whatsappBtn: 'WhatsApp',
+    farmerDetailsModalTitle: 'Verified Farmer & Producer Profile',
+    farmerMobileLabel: 'Farmer Mobile Number',
+    farmerNameLabel: 'Farmer / Contact Person',
+    verifiedProducerBadge: 'Verified KisanDirect Producer',
+    directContactNotice: 'Direct Producer Contact • Zero Middlemen Commission',
+    farmerDirectoryHeading: 'Direct Farmer & FPO Directory',
+    farmerDirectorySub: 'Connect directly with harvesting farmers and FPO leaders via phone call or WhatsApp to negotiate bulk deals and verify harvests.',
+    cropsHarvested: 'Active Crop Lots',
+    farmLocationLabelText: 'Village & District',
+    callDirectlyText: 'Call directly to discuss dispatch timing, bulk rates, and quality inspection.',
+    chatWhatsAppText: 'Chat on WhatsApp for live photos, harvesting updates, and spot pricing.',
+    copyPhoneSuccess: 'Phone number copied to clipboard!',
+    closeModal: 'Close',
   },
 
   hi: {
@@ -533,6 +552,25 @@ export const TRANSLATIONS = {
     mrpSavingsText: 'सुपरमार्केट की तुलना में बचत',
     noProductsInCategory: 'इस श्रेणी में अभी कोई फसल नहीं है। किसान दिनभर नए लॉट प्रकाशित करते हैं!',
     liveFarmerCount: 'किसान लाइव जुड़े हैं',
+
+    // Direct Farmer Contact & Phone Connectivity
+    contactFarmerBtn: 'किसान से संपर्क करें',
+    callFarmerBtn: 'किसान को कॉल करें',
+    callNowBtn: 'कॉल करें',
+    whatsappBtn: 'व्हाट्सएप',
+    farmerDetailsModalTitle: 'सत्यापित किसान एवं उत्पादक प्रोफाइल',
+    farmerMobileLabel: 'किसान का मोबाइल नंबर',
+    farmerNameLabel: 'किसान / संपर्क व्यक्ति',
+    verifiedProducerBadge: 'सत्यापित किसानडायरेक्ट उत्पादक',
+    directContactNotice: 'सीधा किसान संपर्क • शून्य बिचौलिया कमीशन',
+    farmerDirectoryHeading: 'सीधा किसान एवं FPO डायरेक्टरी',
+    farmerDirectorySub: 'थोक भाव तय करने, लॉट की जानकारी लेने और खेत की सीधी जानकारी के लिए किसान व FPO प्रमुखों से सीधे फोन या व्हाट्सएप पर संपर्क करें।',
+    cropsHarvested: 'सक्रिय फसल लॉट',
+    farmLocationLabelText: 'गाँव व जिला',
+    callDirectlyText: 'उठान समय, थोक दर और गुणवत्ता जांच के लिए किसान को सीधे कॉल करें।',
+    chatWhatsAppText: 'ताज़ा फोटो, कटाई की स्थिति और त्वरित भाव के लिए व्हाट्सएप पर संदेश भेजें।',
+    copyPhoneSuccess: 'फोन नंबर क्लिपबोर्ड पर कॉपी हो गया!',
+    closeModal: 'बंद करें',
   },
 };
 

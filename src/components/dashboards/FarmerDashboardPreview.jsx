@@ -273,6 +273,8 @@ export const FarmerDashboardPreview = ({ session, onLogout }) => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCropAdded={handleAddCrop}
+        defaultFarmerName={user.name || 'Rameshwar Patel'}
+        defaultFarmerMobile={user.mobile || '+91 98231 45678'}
         defaultFarm={user.businessName || 'Krishi Vikas FPO'}
         defaultLocation={user.location || 'Nashik, Maharashtra'}
       />

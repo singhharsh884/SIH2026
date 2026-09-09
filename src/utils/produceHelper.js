@@ -170,6 +170,10 @@ export const formatProduceForMarketplace = (crop, isHindi = false) => {
   return {
     id: crop._id || crop.id || `crop_${Math.random()}`,
     name: cropName,
+    farmerName: crop.farmerName || 'Rameshwar Patel',
+    farmName: crop.farmName || 'Krishi Vikas FPO',
+    location: crop.location || 'Nashik, Maharashtra',
+    farmerMobile: crop.farmerMobile || '+91 98231 45678',
     farm: crop.farmName ? `${crop.farmName}, ${crop.location || 'Nashik'}` : (crop.farm || 'Krishi Vikas FPO, Nashik'),
     harvestTime: crop.harvestDate || (isHindi ? 'खेत से ताज़ा कटाई' : 'Fresh Farm Harvest'),
     price: numericPrice,

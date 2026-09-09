@@ -3,7 +3,15 @@ import { X, Sprout, Plus, Sparkles, TrendingUp, AlertCircle, CheckCircle2 } from
 import { AuthInput } from '../common/AuthInput';
 import { useLanguage } from '../../context/LanguageContext';
 
-export const AddCropModal = ({ isOpen, onClose, onCropAdded, defaultLocation = 'Nashik, Maharashtra', defaultFarm = 'Patel Organic FPO' }) => {
+export const AddCropModal = ({
+  isOpen,
+  onClose,
+  onCropAdded,
+  defaultLocation = 'Nashik, Maharashtra',
+  defaultFarm = 'Patel Organic FPO',
+  defaultFarmerName = 'Rameshwar Patel',
+  defaultFarmerMobile = '+91 98231 45678',
+}) => {
   const { t } = useLanguage();
 
   const CATEGORIES = [
@@ -24,6 +32,8 @@ export const AddCropModal = ({ isOpen, onClose, onCropAdded, defaultLocation = '
     harvestDate: 'Ready for Dispatch',
     farmName: defaultFarm,
     location: defaultLocation,
+    farmerName: defaultFarmerName,
+    farmerMobile: defaultFarmerMobile,
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +82,8 @@ export const AddCropModal = ({ isOpen, onClose, onCropAdded, defaultLocation = '
         harvestDate: formData.harvestDate,
         farmName: formData.farmName || defaultFarm,
         location: formData.location || defaultLocation,
+        farmerName: formData.farmerName || defaultFarmerName,
+        farmerMobile: formData.farmerMobile || defaultFarmerMobile,
       };
 
       await onCropAdded(payload);
@@ -308,6 +320,27 @@ export const AddCropModal = ({ isOpen, onClose, onCropAdded, defaultLocation = '
               value={formData.location}
               onChange={handleChange}
               placeholder="e.g. Niphad, Nashik, MH"
+            />
+          </div>
+
+          {/* Direct Farmer Contact for Buyers */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <AuthInput
+              id="farmerName"
+              name="farmerName"
+              label={t('farmerNameLabel') || 'Farmer / Contact Person'}
+              value={formData.farmerName}
+              onChange={handleChange}
+              placeholder="e.g. Rameshwar Patel"
+            />
+
+            <AuthInput
+              id="farmerMobile"
+              name="farmerMobile"
+              label={t('farmerMobileLabel') || 'Farmer Mobile Number'}
+              value={formData.farmerMobile}
+              onChange={handleChange}
+              placeholder="e.g. +91 98231 45678"
             />
           </div>
 

@@ -14,16 +14,23 @@ import {
   Trash2,
   ShoppingBag,
   Sparkles,
+  Phone,
+  PhoneCall,
+  MessageCircle,
+  ShieldCheck,
+  UserCheck,
+  ExternalLink,
 } from 'lucide-react';
 import { AgriSproutIcon } from '../common/AgriPattern';
 import { CreateRFQModal } from './CreateRFQModal';
+import { FarmerContactModal } from './FarmerContactModal';
 import { LanguageToggle } from '../common/LanguageToggle';
 import { useLanguage } from '../../context/LanguageContext';
 import { orderService } from '../../services/orderService';
 import { cropService } from '../../services/cropService';
 
 export const BuyerDashboardPreview = ({ session, onLogout }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const user = session?.user || {
     name: 'Rajiv Mehra',
@@ -34,13 +41,30 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
 
   const [rfqs, setRfqs] = useState([]);
   const [availableCrops, setAvailableCrops] = useState([]);
+  const [selectedFarmer, setSelectedFarmer] = useState(null);
   const [isRFQModalOpen, setIsRFQModalOpen] = useState(false);
   const [notification, setNotification] = useState('');
 
-  // Fetch RFQs and Farm Lots on mount
+  const loadCrops = () => {
+    cropService.getCrops().then((crops) => setAvailableCrops(crops));
+  };
+
+  // Fetch RFQs and Farm Lots on mount and subscribe to updates
   useEffect(() => {
     orderService.getRFQs().then((data) => setRfqs(data));
-    cropService.getCrops().then((crops) => setAvailableCrops(crops));
+    loadCrops();
+
+    const handleUpdate = () => {
+      loadCrops();
+    };
+
+    window.addEventListener('kisandirect_crops_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('kisandirect_crops_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
 
   const handleCreateRFQ = async (rfqData) => {
@@ -227,57 +251,224 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
 
         {/* Direct Farm Lots Available for Instant Procurement */}
         <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-sm mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
             <div>
               <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
                 <span>{t('directFarmLotsHeading')}</span>
                 <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  {t('liveFarmStock')}
+                  {t('liveFarmStock')} ({availableCrops.length} {t('lotsCount') || 'Lots'})
                 </span>
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 mt-0.5">
                 {t('availableLotsSub')}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {availableCrops.slice(0, 3).map((crop) => (
-              <div
-                key={crop._id}
-                className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors flex flex-col justify-between"
-              >
-                <div>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-md">
-                    {crop.farmName || 'Verified FPO'}
-                  </span>
-                  <h3 className="text-sm font-bold text-slate-900 mt-1.5 line-clamp-1">
-                    {crop.cropName || crop.crop}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {t('availableLabel')}: <strong className="text-slate-800">{crop.quantity || crop.qty}</strong>
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {t('locationLabel')}: {crop.location || 'Nashik Cluster'}
-                  </p>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {availableCrops.map((crop) => {
+              const farmerPhone = crop.farmerMobile || '+91 98231 45678';
+              const farmerName = crop.farmerName || 'Rameshwar Patel';
+              const cleanDigits = farmerPhone.replace(/[^\d]/g, '');
+              const cropTitle = crop.cropName || crop.crop || 'Produce Lot';
+              const waText = language === 'hi'
+                ? `नमस्ते ${farmerName} जी! मैं किसानडायरेक्ट (KisanDirect) से आपके थोक लॉट "${cropTitle}" (${crop.quantity || crop.qty}) की खरीद के लिए संपर्क कर रहा हूँ।`
+                : `Namaste ${farmerName} ji! Inquiring via KisanDirect about your wholesale crop lot "${cropTitle}" (${crop.quantity || crop.qty}).`;
 
-                <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+              return (
+                <div
+                  key={crop._id}
+                  className="p-5 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 hover:border-emerald-300 transition-all flex flex-col justify-between shadow-xs hover:shadow-md group"
+                >
                   <div>
-                    <span className="text-sm font-black text-emerald-800">{crop.price}</span>
-                    <p className="text-[10px] text-slate-400">{t('mandiRate')}: {crop.mandi}</p>
+                    {/* Farmer Identity & Farm Badge */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[11px] font-bold text-emerald-900 bg-emerald-100/90 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate max-w-[130px]">{farmerName}</span>
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-500 truncate max-w-[140px]">
+                        {crop.farmName || 'Patel Green Farms'}
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-bold text-slate-900 mt-1 line-clamp-1 group-hover:text-emerald-800 transition-colors">
+                      {cropTitle}
+                    </h3>
+
+                    <div className="mt-2 space-y-1 text-xs text-slate-600">
+                      <p className="flex items-center justify-between">
+                        <span>{t('availableLabel')}:</span>
+                        <strong className="text-slate-900">{crop.quantity || crop.qty}</strong>
+                      </p>
+                      <p className="flex items-center justify-between">
+                        <span>{t('locationLabel')}:</span>
+                        <span className="text-slate-700 font-medium truncate max-w-[160px]">{crop.location || 'Nashik Cluster'}</span>
+                      </p>
+                    </div>
+
+                    {/* Direct Farmer Contact & Calling Box */}
+                    <div className="my-3.5 p-3 rounded-xl bg-white border border-emerald-200/90 shadow-xs">
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <div className="flex items-center gap-1.5 font-bold text-emerald-950 font-mono">
+                          <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{farmerPhone}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFarmer(crop)}
+                          className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer"
+                        >
+                          {t('contactFarmerBtn')} →
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                        {/* Direct Phone Call Button */}
+                        <a
+                          href={`tel:${farmerPhone.replace(/\s+/g, '')}`}
+                          className="inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-bold transition-colors shadow-xs cursor-pointer"
+                          title={`Call ${farmerName}`}
+                        >
+                          <PhoneCall className="w-3 h-3" />
+                          <span>{t('callNowBtn') || 'Call'}</span>
+                        </a>
+
+                        {/* Direct WhatsApp Button */}
+                        <a
+                          href={`https://wa.me/${cleanDigits}?text=${encodeURIComponent(waText)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 py-1.5 px-2.5 bg-teal-800 hover:bg-teal-900 active:bg-teal-950 text-white rounded-lg text-xs font-bold transition-colors shadow-xs cursor-pointer"
+                          title={`WhatsApp ${farmerName}`}
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          <span>{t('whatsappBtn') || 'WhatsApp'}</span>
+                        </a>
+                      </div>
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleProcureCropLot(crop)}
-                    className="px-3 py-1.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer"
-                  >
-                    {t('procureLot')}
-                  </button>
+                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                    <div>
+                      <span className="text-base font-black text-emerald-800">{crop.price}</span>
+                      <p className="text-[10px] text-slate-400">{t('mandiRate')}: {crop.mandi}</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleProcureCropLot(crop)}
+                      className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:scale-105 cursor-pointer flex items-center gap-1"
+                    >
+                      <span>{t('procureLot')}</span>
+                    </button>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Direct Farmer & FPO Network Directory */}
+        <div className="bg-gradient-to-br from-emerald-900 to-teal-950 text-white rounded-3xl p-6 sm:p-7 shadow-lg mb-8 border border-emerald-700/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div>
+              <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold mb-2 border border-emerald-400/30">
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>{t('directContactNotice')}</span>
               </div>
-            ))}
+              <h2 className="text-xl font-extrabold text-white">
+                {t('farmerDirectoryHeading')}
+              </h2>
+              <p className="text-xs text-emerald-200/90 mt-1 max-w-2xl">
+                {t('farmerDirectorySub')}
+              </p>
+            </div>
+          </div>
+
+          {/* Directory Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from(
+              new Map(
+                availableCrops.map((c) => [
+                  c.farmerName || 'Rameshwar Patel',
+                  {
+                    farmerName: c.farmerName || 'Rameshwar Patel',
+                    farmName: c.farmName || 'Krishi Vikas FPO',
+                    farmerMobile: c.farmerMobile || '+91 98231 45678',
+                    location: c.location || 'Nashik, Maharashtra',
+                    sampleCrop: c.cropName || c.crop,
+                    cropData: c,
+                  },
+                ])
+              ).values()
+            ).map((farmer) => {
+              const cleanDigits = farmer.farmerMobile.replace(/[^\d]/g, '');
+              const waText = language === 'hi'
+                ? `नमस्ते ${farmer.farmerName} जी! मैं किसानडायरेक्ट पर एक थोक खरीदार हूँ और आपके फार्म से सीधी आपूर्ति के संबंध में बात करना चाहता हूँ।`
+                : `Namaste ${farmer.farmerName} ji! I am a verified bulk buyer on KisanDirect inquiring about direct farm produce contracts.`;
+
+              return (
+                <div
+                  key={farmer.farmerName}
+                  className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 hover:bg-white/15 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500 text-emerald-950 font-black text-lg flex items-center justify-center shrink-0 shadow-sm">
+                        {farmer.farmerName.charAt(0)}
+                      </div>
+                      <div className="truncate">
+                        <h3 className="text-sm font-bold text-white truncate">
+                          {farmer.farmerName}
+                        </h3>
+                        <p className="text-[11px] text-emerald-300 font-semibold truncate">
+                          {farmer.farmName}
+                        </p>
+                        <p className="text-[10px] text-slate-300 flex items-center gap-1 mt-0.5 truncate">
+                          <MapPin className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+                          <span>{farmer.location}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-xs mb-3">
+                      <div className="flex items-center justify-between font-mono font-bold text-emerald-200 mb-1.5">
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-emerald-400" />
+                          <span>{farmer.farmerMobile}</span>
+                        </span>
+                        <span className="text-[9px] bg-emerald-500/30 text-emerald-300 px-1.5 py-0.5 rounded">
+                          {language === 'hi' ? 'सत्यापित' : 'Verified'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-emerald-200/80 line-clamp-1">
+                        🌾 {farmer.sampleCrop}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+                    <a
+                      href={`tel:${farmer.farmerMobile.replace(/\s+/g, '')}`}
+                      className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      <PhoneCall className="w-3 h-3" />
+                      <span>{t('callNowBtn') || 'Call'}</span>
+                    </a>
+                    <a
+                      href={`https://wa.me/${cleanDigits}?text=${encodeURIComponent(waText)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      <MessageCircle className="w-3 h-3" />
+                      <span>{t('whatsappBtn') || 'WhatsApp'}</span>
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -345,6 +536,13 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
         onClose={() => setIsRFQModalOpen(false)}
         onRFQCreated={handleCreateRFQ}
         buyerBusinessName={user.businessName}
+      />
+
+      {/* Farmer Contact & Direct Phone Profile Modal */}
+      <FarmerContactModal
+        isOpen={!!selectedFarmer}
+        onClose={() => setSelectedFarmer(null)}
+        farmer={selectedFarmer}
       />
     </div>
   );

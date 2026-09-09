@@ -12,13 +12,22 @@ import {
   CheckCircle,
   Heart,
   Sparkles,
+  Layers,
+  Sprout,
+  Filter,
+  Phone,
+  PhoneCall,
+  MessageCircle,
 } from 'lucide-react';
 import { AgriSproutIcon } from '../common/AgriPattern';
 import { CartDrawer } from './CartDrawer';
 import { OrderSuccessModal } from './OrderSuccessModal';
+import { FarmerContactModal } from './FarmerContactModal';
 import { LanguageToggle } from '../common/LanguageToggle';
 import { orderService } from '../../services/orderService';
+import { cropService } from '../../services/cropService';
 import { useLanguage } from '../../context/LanguageContext';
+import { formatProduceForMarketplace, isGreenVegetable, getProduceImage } from '../../utils/produceHelper';
 
 export const MarketplacePreview = ({ session, onLogout }) => {
   const { t, language } = useLanguage();
@@ -30,63 +39,111 @@ export const MarketplacePreview = ({ session, onLogout }) => {
   };
 
   const [cart, setCart] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'green_veg' | 'farmer_direct' | 'fruits'
+  const [isLoadingCrops, setIsLoadingCrops] = useState(true);
+  const [selectedFarmer, setSelectedFarmer] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [completedOrder, setCompletedOrder] = useState(null);
+
+  const isHindi = language === 'hi';
 
   // Initialize cart from storage
   useEffect(() => {
     setCart(orderService.getCart());
   }, []);
 
-  const isHindi = language === 'hi';
+  // Load live farmer crops & produce catalog
+  const loadProduce = async () => {
+    try {
+      const dbCrops = await cropService.getCrops();
+      const formattedCrops = dbCrops.map((c) => formatProduceForMarketplace(c, isHindi));
 
-  const PRODUCTS = [
-    {
-      id: 1,
-      name: isHindi ? 'हाइड्रोपोनिक पालक व हरी पत्तियां' : 'Hydroponic Spinach & Baby Greens',
-      farm: isHindi ? 'पटेल ग्रीन फार्म्स, नासिक' : 'Patel Green Farms, Nashik',
-      harvestTime: isHindi ? '5 घंटे पहले काटा गया' : 'Harvested 5 hrs ago',
-      price: 35,
-      unit: isHindi ? '250g गुच्छा' : '250g bunch',
-      mrp: isHindi ? 'सुपरमार्केट में ₹55' : '₹55 in Supermarkets',
-      image: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=400&q=80',
-      tag: isHindi ? '100% कीटनाशक मुक्त' : '100% Pesticide Free',
-    },
-    {
-      id: 2,
-      name: isHindi ? 'देसी मीठी गाजर (किसान स्पेशल)' : 'Sweet Country Carrots (Kisan Special)',
-      farm: isHindi ? 'विकास सहकारी FPO, ऊटी' : 'Vikas Sahakari FPO, Ooty',
-      harvestTime: isHindi ? 'सीधा खेत से' : 'Direct Farm Lot',
-      price: 42,
-      unit: isHindi ? '1 किग्रा' : '1 kg',
-      mrp: isHindi ? 'सुपरमार्केट में ₹68' : '₹68 in Supermarkets',
-      image: 'https://images.unsplash.com/photo-1741515044901-58696421d24a?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-      tag: isHindi ? 'ताज़ा व मीठी' : 'Crisp & Sweet',
-    },
-    {
-      id: 3,
-      name: isHindi ? 'रत्नागिरी हापुस आम (Alphonso)' : 'Farm-Fresh Ratnagiri Alphonso Mangoes',
-      farm: isHindi ? 'कोंकण मैंगो उत्पादक सहकारी' : 'Konkan Mango Growers Cooperative',
-      harvestTime: isHindi ? 'GI-टैग प्रमाणित' : 'GI-Tagged Origin',
-      price: 680,
-      unit: isHindi ? 'दर्जन (12 नग)' : 'Dozen (12 pcs)',
-      mrp: isHindi ? 'बिचौलियों के साथ ₹950' : '₹950 with middlemen',
-      image: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=400&q=80',
-      tag: isHindi ? 'प्राकृतिक रूप से पका' : 'Naturally Ripened',
-    },
-    {
-      id: 4,
-      name: isHindi ? 'खेत के ताज़ा लाल टमाटर' : 'Vine-Ripened Salad Tomatoes',
-      farm: isHindi ? 'रामेश्वर पटेल फार्म, निफाड़' : 'Rameshwar Patel Farms, Niphad',
-      harvestTime: isHindi ? 'आज सुबह की कटाई' : 'Harvested Today morning',
-      price: 32,
-      unit: isHindi ? '1 किग्रा' : '1 kg',
-      mrp: isHindi ? 'खुदरा में ₹48' : '₹48 retail',
-      image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=400&q=80',
-      tag: isHindi ? 'रसीले व ठोस' : 'Juicy & Firm',
-    },
-  ];
+      // Featured seasonal specialties
+      const featuredItems = [
+        {
+          id: 'feat_mango',
+          name: isHindi ? 'रत्नागिरी हापुस आम (Alphonso)' : 'Farm-Fresh Ratnagiri Alphonso Mangoes',
+          farm: isHindi ? 'कोंकण मैंगो उत्पादक सहकारी, रत्नागिरी' : 'Konkan Mango Growers Cooperative, Ratnagiri',
+          harvestTime: isHindi ? 'GI-टैग प्रमाणित' : 'GI-Tagged Origin',
+          price: 680,
+          unit: isHindi ? 'दर्जन (12 नग)' : 'Dozen (12 pcs)',
+          mrp: isHindi ? 'बिचौलियों के साथ ₹950' : '₹950 with middlemen',
+          image: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=400&q=80',
+          tag: isHindi ? 'प्राकृतिक रूप से पका' : 'Naturally Ripened',
+          category: 'Fruits',
+          isGreen: false,
+          isFarmerListing: true,
+          rawQuantity: '80 Crates',
+        },
+        {
+          id: 'feat_carrots',
+          name: isHindi ? 'देसी मीठी गाजर (किसान स्पेशल)' : 'Sweet Country Carrots (Kisan Special)',
+          farm: isHindi ? 'विकास सहकारी FPO, ऊटी' : 'Vikas Sahakari FPO, Ooty',
+          harvestTime: isHindi ? 'सीधा खेत से' : 'Direct Farm Lot',
+          price: 42,
+          unit: isHindi ? '1 किग्रा' : '1 kg',
+          mrp: isHindi ? 'सुपरमार्केट में ₹68' : '₹68 in Supermarkets',
+          image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEXDJb3mAZdIcSxHZA_mrwBbm6CaVPhnTBZ8LMWnNItA&s=10',
+          tag: isHindi ? 'ताज़ा व मीठी' : 'Crisp & Sweet',
+          category: 'Vegetables',
+          isGreen: false,
+          isFarmerListing: true,
+          rawQuantity: '1.5 Tons',
+        },
+      ];
+
+      // Merge farmer crops with featured items, ensuring green vegetables added by farmers are prioritized!
+      const existingNames = new Set(formattedCrops.map((f) => f.name.toLowerCase()));
+      const uniqueFeatured = featuredItems.filter((f) => !existingNames.has(f.name.toLowerCase()));
+
+      const combined = [...formattedCrops, ...uniqueFeatured].sort((a, b) => {
+        // Prioritize green vegetables at the top
+        if (a.isGreen && !b.isGreen) return -1;
+        if (!a.isGreen && b.isGreen) return 1;
+        return 0;
+      });
+
+      setProducts(combined);
+      setIsLoadingCrops(false);
+    } catch (err) {
+      console.error('Failed to load produce:', err);
+      setIsLoadingCrops(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProduce();
+
+    const handleUpdate = () => {
+      loadProduce();
+    };
+
+    window.addEventListener('kisandirect_crops_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('kisandirect_crops_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, [language]);
+
+  // Filtered produce items
+  const filteredProducts = products.filter((p) => {
+    if (activeFilter === 'green_veg') {
+      return p.isGreen || isGreenVegetable(p.name, p.category);
+    }
+    if (activeFilter === 'farmer_direct') {
+      return p.isFarmerListing;
+    }
+    if (activeFilter === 'fruits') {
+      return p.category === 'Fruits' || p.category === 'Grains & Cereals';
+    }
+    return true; // 'all'
+  });
+
+  const greenVegCount = products.filter((p) => p.isGreen || isGreenVegetable(p.name, p.category)).length;
 
   // Cart operations
   const handleAddToCart = (product) => {
@@ -223,82 +280,212 @@ export const MarketplacePreview = ({ session, onLogout }) => {
           </div>
         </div>
 
-        {/* Products Grid with WORKING ADD TO CART */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PRODUCTS.map((p) => {
-            const inCart = cart.find((item) => item.id === p.id);
-
-            return (
-              <div
-                key={p.id}
-                className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="relative h-44 overflow-hidden bg-slate-100">
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <span className="absolute top-2.5 left-2.5 bg-emerald-900/80 backdrop-blur-md text-emerald-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                      {p.tag}
-                    </span>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1 mb-1">
-                      <Clock className="w-3 h-3" />
-                      {p.harvestTime}
-                    </p>
-                    <h2 className="text-sm font-bold text-slate-900 line-clamp-1">{p.name}</h2>
-                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{t('farmLabel')}: {p.farm}</p>
-                  </div>
-                </div>
-
-                <div className="p-4 pt-0 border-t border-slate-100 mt-2 flex items-center justify-between">
-                  <div>
-                    <p className="text-base font-black text-slate-900">
-                      ₹{p.price}{' '}
-                      <span className="text-xs font-normal text-slate-500">/ {p.unit}</span>
-                    </p>
-                    <p className="text-[10px] text-slate-400 line-through">{p.mrp}</p>
-                  </div>
-
-                  {/* Interactive Quantity / Add to Cart Button */}
-                  {inCart ? (
-                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-300 rounded-xl p-1">
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateQuantity(p.id, -1)}
-                        className="w-6 h-6 rounded-lg bg-white text-emerald-800 flex items-center justify-center shadow-xs hover:bg-emerald-100 transition-colors cursor-pointer"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="text-xs font-black text-emerald-950 min-w-4 text-center">
-                        {inCart.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateQuantity(p.id, 1)}
-                        className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs hover:bg-emerald-700 transition-colors cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleAddToCart(p)}
-                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1 cursor-pointer transform hover:scale-105"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      {t('addToCartBtn')}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        {/* Live Green Vegetable & Farmer Harvest Broadcast Banner */}
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-900 to-teal-950 text-white border border-emerald-700/60 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-800 text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-700 shadow-sm">
+              <span className="text-xl">🥬</span>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>{t('greenVegBroadcastTitle')}</span>
+                <span className="bg-emerald-500 text-emerald-950 font-black text-[10px] px-2 py-0.5 rounded-full">
+                  {greenVegCount} {isHindi ? 'हरी सब्जियाँ लाइव' : 'Green Veg Live'}
+                </span>
+              </h2>
+              <p className="text-xs text-emerald-200/90 mt-0.5">
+                {t('greenVegBroadcastSub')}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('green_veg')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              activeFilter === 'green_veg'
+                ? 'bg-emerald-400 text-emerald-950 ring-2 ring-white'
+                : 'bg-white/15 hover:bg-white/25 text-white'
+            }`}
+          >
+            <span>{isHindi ? 'केवल हरी सब्जियाँ देखें' : 'View Green Veg Only'}</span>
+            <span>→</span>
+          </button>
         </div>
+
+        {/* Filter Navigation Tabs */}
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-none">
+          {[
+            { id: 'all', label: t('filterAll') || 'All Farm Produce', count: products.length },
+            { id: 'green_veg', label: t('filterGreenVeg') || '🥦 Green Vegetables', count: greenVegCount },
+            { id: 'farmer_direct', label: t('filterFarmerDirect') || '🚜 Direct Farmer Lots', count: products.filter((p) => p.isFarmerListing).length },
+            { id: 'fruits', label: t('filterFruits') || '🍎 Fruits & Grains', count: products.filter((p) => p.category === 'Fruits' || p.category === 'Grains & Cereals').length },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveFilter(tab.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeFilter === tab.id
+                  ? 'bg-emerald-700 text-white shadow-md shadow-emerald-800/20'
+                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
+                  activeFilter === tab.id
+                    ? 'bg-emerald-900 text-emerald-200'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Products Grid with Dynamic Farmer Crops & Green Vegetables */}
+        {isLoadingCrops ? (
+          <div className="text-center py-16">
+            <div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs font-bold text-slate-600">
+              {isHindi ? 'खेतों से ताज़ा हरी सब्जियाँ लोड हो रही हैं...' : 'Loading fresh farm harvests...'}
+            </p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Sprout className="w-7 h-7" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800 mb-1">
+              {t('noProductsInCategory')}
+            </h3>
+            <button
+              type="button"
+              onClick={() => setActiveFilter('all')}
+              className="mt-3 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-emerald-700"
+            >
+              {isHindi ? 'सभी फसलें देखें' : 'View All Produce'}
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filteredProducts.map((p) => {
+              const inCart = cart.find((item) => item.id === p.id);
+
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between relative"
+                >
+                  <div>
+                    <div className="relative h-44 overflow-hidden bg-slate-100">
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {/* Green Veg / Farmer Tag */}
+                      <span
+                        className={`absolute top-2.5 left-2.5 backdrop-blur-md text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs ${
+                          p.isGreen
+                            ? 'bg-emerald-800/90 text-emerald-100 border border-emerald-500/30'
+                            : 'bg-slate-900/80 text-emerald-200 border border-slate-700/50'
+                        }`}
+                      >
+                        {p.tag}
+                      </span>
+
+                      {/* Live Stock Badge */}
+                      {p.rawQuantity && (
+                        <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
+                          {p.rawQuantity}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {p.harvestTime}
+                        </p>
+
+                        {/* Direct Farmer Contact Pill */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFarmer(p)}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 hover:text-emerald-950 bg-emerald-100/90 hover:bg-emerald-200 px-2 py-0.5 rounded-full transition-all border border-emerald-300/60 cursor-pointer"
+                          title={t('contactFarmerBtn')}
+                        >
+                          <Phone className="w-2.5 h-2.5 text-emerald-700" />
+                          <span>{p.farmerMobile ? p.farmerMobile.replace('+91 ', '') : 'Call'}</span>
+                        </button>
+                      </div>
+
+                      <h2 className="text-sm font-bold text-slate-900 line-clamp-1">{p.name}</h2>
+
+                      <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
+                        <p className="line-clamp-1 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span className="truncate max-w-[150px]">{p.farm}</span>
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFarmer(p)}
+                          className="text-[10px] font-bold text-emerald-700 hover:underline shrink-0 ml-1 cursor-pointer"
+                        >
+                          {p.farmerName ? p.farmerName.split(' ')[0] : 'Farmer'} 📞
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 pt-0 border-t border-slate-100 mt-2 flex items-center justify-between">
+                    <div>
+                      <p className="text-base font-black text-slate-900">
+                        ₹{p.price}{' '}
+                        <span className="text-xs font-normal text-slate-500">/ {p.unit}</span>
+                      </p>
+                      <p className="text-[10px] text-slate-400 line-through">{p.mrp}</p>
+                    </div>
+
+                    {/* Interactive Quantity / Add to Cart Button */}
+                    {inCart ? (
+                      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-300 rounded-xl p-1">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQuantity(p.id, -1)}
+                          className="w-6 h-6 rounded-lg bg-white text-emerald-800 flex items-center justify-center shadow-xs hover:bg-emerald-100 transition-colors cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs font-black text-emerald-950 min-w-4 text-center">
+                          {inCart.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQuantity(p.id, 1)}
+                          className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs hover:bg-emerald-700 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleAddToCart(p)}
+                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1 cursor-pointer transform hover:scale-105"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        {t('addToCartBtn')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
       {/* Cart Slide-Over Drawer */}
@@ -318,6 +505,13 @@ export const MarketplacePreview = ({ session, onLogout }) => {
         isOpen={!!completedOrder}
         onClose={() => setCompletedOrder(null)}
         order={completedOrder}
+      />
+
+      {/* Farmer Direct Contact & Phone Profile Modal */}
+      <FarmerContactModal
+        isOpen={!!selectedFarmer}
+        onClose={() => setSelectedFarmer(null)}
+        farmer={selectedFarmer}
       />
     </div>
   );

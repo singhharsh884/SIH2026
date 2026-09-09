@@ -57,6 +57,7 @@ export const addCrop = async (req, res, next) => {
       mandi,
       status,
       harvestDate,
+      farmerName,
       farmName,
       location,
       farmerMobile,
@@ -69,17 +70,25 @@ export const addCrop = async (req, res, next) => {
       });
     }
 
+    const formatPrice = (val, defaultVal = '₹20 / kg') => {
+      if (!val) return defaultVal;
+      const numMatch = String(val).match(/[\d.]+/);
+      const num = numMatch ? numMatch[0] : '20';
+      return `₹${num} / kg`;
+    };
+
     const cropData = {
       cropName: cropName.trim(),
       category: category || 'Vegetables',
       quantity: quantity.trim(),
-      price: price.includes('₹') ? price.trim() : `₹${price.trim()} / kg`,
-      mandi: mandi ? (mandi.includes('₹') ? mandi.trim() : `₹${mandi.trim()} / kg`) : '₹20 / kg',
+      price: formatPrice(price, '₹35 / kg'),
+      mandi: formatPrice(mandi, '₹22 / kg'),
       status: status || 'Active • Ready for Dispatch',
       harvestDate: harvestDate || 'Ready for Dispatch',
+      farmerName: farmerName ? farmerName.trim() : (farmName ? farmName.split(' ')[0] + ' Farmer' : 'Rameshwar Patel'),
       farmName: farmName || 'Krishi Vikas FPO',
       location: location || 'Nashik, Maharashtra',
-      farmerMobile: farmerMobile || '',
+      farmerMobile: farmerMobile ? farmerMobile.trim() : '+91 98231 45678',
     };
 
     let createdCrop;

@@ -17,7 +17,9 @@ const DEFAULT_CROPS = [
     mandi: '₹26 / kg',
     status: 'Active • 15 Orders',
     harvestDate: 'Fresh Morning Harvest',
+    farmerName: 'Rameshwar Patel',
     farmName: 'Patel Green Farms',
+    farmerMobile: '+91 98231 45678',
     location: 'Nashik, Maharashtra',
   },
   {
@@ -29,7 +31,9 @@ const DEFAULT_CROPS = [
     mandi: '₹29 / kg',
     status: 'Active • 9 Orders',
     harvestDate: 'Ready for Dispatch',
+    farmerName: 'Santosh Deshmukh',
     farmName: 'Krishi Vikas Organic FPO',
+    farmerMobile: '+91 94222 18901',
     location: 'Niphad, Nashik',
   },
   {
@@ -41,7 +45,9 @@ const DEFAULT_CROPS = [
     mandi: '₹20 / kg',
     status: 'Active • Ready for Dispatch',
     harvestDate: 'Harvested Today',
+    farmerName: 'Balasaheb Shinde',
     farmName: 'Vikas Sahakari FPO',
+    farmerMobile: '+91 98210 33412',
     location: 'Nashik Cluster',
   },
   {
@@ -53,7 +59,9 @@ const DEFAULT_CROPS = [
     mandi: '₹32 / kg',
     status: 'Active • 6 Orders',
     harvestDate: 'Ready for Dispatch',
+    farmerName: 'Dr. Aniket Jadhav',
     farmName: 'Sahyadri Agri FPO',
+    farmerMobile: '+91 97654 89012',
     location: 'Pune / Nashik Valley',
   },
   {
@@ -65,7 +73,9 @@ const DEFAULT_CROPS = [
     mandi: '₹23 / kg',
     status: 'Active • 12 Orders',
     harvestDate: 'Fresh Harvest',
+    farmerName: 'Rameshwar Patel',
     farmName: 'Krishi Vikas FPO',
+    farmerMobile: '+91 98231 45678',
     location: 'Nashik, Maharashtra',
   },
   {
@@ -77,7 +87,9 @@ const DEFAULT_CROPS = [
     mandi: '₹25 / kg',
     status: 'Active • 8 Orders',
     harvestDate: 'Ready for Dispatch',
-    farmName: 'Rameshwar Patel Farm',
+    farmerName: 'Dinkar Khairnar',
+    farmName: 'Krishi Vikas FPO',
+    farmerMobile: '+91 98225 67890',
     location: 'Niphad, Nashik',
   },
   {
@@ -89,7 +101,9 @@ const DEFAULT_CROPS = [
     mandi: '₹38 / kg',
     status: 'Reserved for Wholesale',
     harvestDate: 'Cured & Bagged',
-    farmName: 'Krishi Vikas FPO',
+    farmerName: 'Mahendra Singh Chouhan',
+    farmName: 'Malwa Krishi FPO',
+    farmerMobile: '+91 94250 87654',
     location: 'Malwa / Nashik Hub',
   },
 ];
