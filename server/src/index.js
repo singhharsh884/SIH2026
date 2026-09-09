@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import { connectDB, isConnectedToMongo } from './config/db.js';
+import { connectDB, isConnectedToMongo, lastMongoError } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import cropRoutes from './routes/cropRoutes.js';
 import { orderRouter, rfqRouter } from './routes/orderRoutes.js';
@@ -70,6 +70,8 @@ const healthHandler = (req, res) => {
     status: 'healthy',
     platform: 'KisanDirect Backend API',
     database: isConnectedToMongo ? 'MongoDB Connected' : 'Resilient In-Memory Mode',
+    hasMongoUri: !!process.env.MONGODB_URI,
+    mongoError: lastMongoError,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });

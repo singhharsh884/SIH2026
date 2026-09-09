@@ -9,6 +9,7 @@ try {
 }
 
 export let isConnectedToMongo = false;
+export let lastMongoError = null;
 
 export const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) {
@@ -20,17 +21,17 @@ export const connectDB = async () => {
 
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 8000,
     });
 
     isConnectedToMongo = true;
+    lastMongoError = null;
     console.log(`✅ [MongoDB] Connected to database: ${conn.connection.host}/${conn.connection.name}`);
     return true;
   } catch (error) {
     isConnectedToMongo = false;
-    console.warn(`⚠️ [MongoDB] Could not reach MongoDB at: ${uri}`);
-    console.warn(`💡 [Notice] Running in resilient in-memory mode so the API works out-of-the-box.`);
-    console.warn(`💡 [Tip] To connect your cloud database, set MONGODB_URI in server/.env (e.g. MongoDB Atlas)`);
+    lastMongoError = error.message;
+    console.warn(`⚠️ [MongoDB] Could not reach MongoDB at: ${uri} - ${error.message}`);
     return false;
   }
 };
