@@ -6,6 +6,7 @@ import { connectDB, isConnectedToMongo } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import cropRoutes from './routes/cropRoutes.js';
 import { orderRouter, rfqRouter } from './routes/orderRoutes.js';
+import logisticsRoutes from './routes/logisticsRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -63,6 +64,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/crops', cropRoutes);
 app.use('/api/orders', orderRouter);
 app.use('/api/rfq', rfqRouter);
+app.use('/api/logistics', logisticsRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res) => {

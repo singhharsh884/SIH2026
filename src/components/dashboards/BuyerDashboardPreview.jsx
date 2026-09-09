@@ -20,10 +20,12 @@ import {
   ShieldCheck,
   UserCheck,
   ExternalLink,
+  Navigation,
 } from 'lucide-react';
 import { AgriSproutIcon } from '../common/AgriPattern';
 import { CreateRFQModal } from './CreateRFQModal';
 import { FarmerContactModal } from './FarmerContactModal';
+import { RouteOptimizer } from './RouteOptimizer';
 import { LanguageToggle } from '../common/LanguageToggle';
 import { useLanguage } from '../../context/LanguageContext';
 import { orderService } from '../../services/orderService';
@@ -42,6 +44,7 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
   const [rfqs, setRfqs] = useState([]);
   const [availableCrops, setAvailableCrops] = useState([]);
   const [selectedFarmer, setSelectedFarmer] = useState(null);
+  const [showRouteOptimizer, setShowRouteOptimizer] = useState(false);
   const [isRFQModalOpen, setIsRFQModalOpen] = useState(false);
   const [notification, setNotification] = useState('');
 
@@ -146,7 +149,20 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowRouteOptimizer(!showRouteOptimizer)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                showRouteOptimizer
+                  ? 'bg-emerald-800 text-white shadow-xs'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80'
+              }`}
+            >
+              <Navigation className="w-3.5 h-3.5" />
+              <span>{t('routeOptimizerNav')}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setIsRFQModalOpen(true)}
@@ -219,14 +235,36 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-xs font-bold text-emerald-900 bg-white px-4 py-2 rounded-xl border border-emerald-200 shadow-sm">
-            <span className="flex items-center gap-1">
-              <Thermometer className="w-4 h-4 text-emerald-600" /> {t('optimalText')}
-            </span>
-            <span>•</span>
-            <span className="text-emerald-700">{t('etaText')}</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 text-xs font-bold text-emerald-900 bg-white px-3.5 py-2 rounded-xl border border-emerald-200 shadow-sm">
+              <span className="flex items-center gap-1">
+                <Thermometer className="w-4 h-4 text-emerald-600" /> {t('optimalText')}
+              </span>
+              <span>•</span>
+              <span className="text-emerald-700">{t('etaText')}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowRouteOptimizer(!showRouteOptimizer)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer hover:scale-105"
+            >
+              <Navigation className="w-3.5 h-3.5" />
+              <span>
+                {showRouteOptimizer
+                  ? (language === 'hi' ? 'रूट छुपाएं' : 'Hide Optimizer')
+                  : t('openRouteOptimizerBtn')}
+              </span>
+            </button>
           </div>
         </div>
+
+        {/* Embedded / Collapsible AI Route Optimizer View */}
+        {showRouteOptimizer && (
+          <div className="mb-8 animate-fadeIn">
+            <RouteOptimizer />
+          </div>
+        )}
 
         {/* Bulk KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">

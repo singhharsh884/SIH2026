@@ -5,6 +5,7 @@ import { RegisterForm } from './components/auth/RegisterForm';
 import { FarmerDashboardPreview } from './components/dashboards/FarmerDashboardPreview';
 import { MarketplacePreview } from './components/dashboards/MarketplacePreview';
 import { BuyerDashboardPreview } from './components/dashboards/BuyerDashboardPreview';
+import { RouteOptimizerPreview } from './components/dashboards/RouteOptimizerPreview';
 import { authService } from './services/authService';
 import { LanguageToggle } from './components/common/LanguageToggle';
 import { useLanguage } from './context/LanguageContext';
@@ -103,6 +104,21 @@ export function App() {
     if (session.redirectUrl === '/buyer/dashboard' || session.role === 'buyer') {
       return <BuyerDashboardPreview session={session} onLogout={handleLogout} />;
     }
+    if (session.redirectUrl === '/logistics/routes' || session.role === 'logistics') {
+      return (
+        <RouteOptimizerPreview
+          session={session}
+          onLogout={handleLogout}
+          onBackToBuyer={() =>
+            setSession({
+              user: { name: 'Rajiv Mehra', businessName: 'TastyGreens Chain', location: 'Mumbai, MH', badge: 'Verified B2B Buyer' },
+              role: 'buyer',
+              redirectUrl: '/buyer/dashboard',
+            })
+          }
+        />
+      );
+    }
   }
 
   return (
@@ -178,6 +194,21 @@ export function App() {
             className="text-[11px] bg-emerald-800 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-md transition-colors cursor-pointer"
           >
             {t('buyerDashboard')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRole('buyer');
+              setSession({
+                user: { name: 'Logistics Fleet Controller', businessName: 'KisanDirect Cold Fleet', location: 'Navi Mumbai Hub', badge: 'AI Fleet Manager' },
+                role: 'logistics',
+                redirectUrl: '/logistics/routes',
+              });
+            }}
+            className="text-[11px] bg-teal-800 hover:bg-teal-700 text-white font-bold px-2.5 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1 border border-teal-600/50"
+          >
+            <span>🚚</span>
+            <span>{t('routeOptimizerNav')}</span>
           </button>
         </div>
       </div>
