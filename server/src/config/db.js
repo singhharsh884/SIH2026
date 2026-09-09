@@ -11,6 +11,11 @@ try {
 export let isConnectedToMongo = false;
 
 export const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) {
+    isConnectedToMongo = true;
+    return true;
+  }
+
   const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/kisandirect';
 
   try {

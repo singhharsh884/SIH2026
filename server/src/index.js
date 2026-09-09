@@ -34,6 +34,16 @@ app.use(
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Ensure DB is connected before handling requests
+app.use(async (req, res, next) => {
+  if (!isConnectedToMongo) {
+    try {
+      await connectDB();
+    } catch (e) {}
+  }
+  next();
+});
+
 // Welcome root handler
 const welcomeHandler = (req, res) => {
   res.status(200).json({
