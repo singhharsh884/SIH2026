@@ -5,7 +5,7 @@
  * with graceful fallback to local mode if the backend is temporarily unreachable.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
+const API_BASE_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
 const STORAGE_KEY = 'kisandirect_session';
 
 export const DEMO_CREDENTIALS = {
