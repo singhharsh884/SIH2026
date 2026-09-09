@@ -28,12 +28,38 @@ export const createOrder = async (req, res, next) => {
 
     const orderId = 'KD-' + Math.floor(100000 + Math.random() * 900000);
 
+    const parsedItems = items.map((item, idx) => {
+      const priceNum =
+        typeof item.price === 'number'
+          ? item.price
+          : parseFloat(String(item.price).replace(/[^\d.]/g, '')) || 0;
+      const qtyNum =
+        typeof item.quantity === 'number'
+          ? item.quantity
+          : parseFloat(String(item.quantity).replace(/[^\d.]/g, '')) || 1;
+
+      return {
+        productId: item.productId || item.id || `prod_${idx + 1}`,
+        name: item.name || item.cropName || 'Farm Fresh Produce',
+        farm: item.farm || item.farmName || 'Direct Farm',
+        price: priceNum,
+        quantity: Math.max(1, qtyNum),
+        unit: item.unit || 'kg',
+      };
+    });
+
+    const finalTotal =
+      typeof totalAmount === 'number'
+        ? totalAmount
+        : parseFloat(String(totalAmount).replace(/[^\d.]/g, '')) ||
+          parsedItems.reduce((acc, it) => acc + it.price * it.quantity, 0);
+
     const orderPayload = {
       orderId,
       customerName: customerName || 'KisanDirect Customer',
       customerMobile: customerMobile || '',
-      items,
-      totalAmount,
+      items: parsedItems,
+      totalAmount: finalTotal,
       deliveryAddress: deliveryAddress || 'Registered Address',
       deliverySlot: deliverySlot || 'Tomorrow Morning: 6 AM - 9 AM Direct Farm Harvest',
       paymentMethod: paymentMethod || 'UPI / KisanPay Direct',
@@ -92,7 +118,9 @@ export const getRFQs = async (req, res, next) => {
       rfqs = await RFQModel.find().sort({ createdAt: -1 });
       if (rfqs.length === 0) {
         const seed = await memoryRFQStore.find();
-        rfqs = await RFQModel.insertMany(seed);
+        rfqs = await RFQModel.insertMany(
+          seed.map(({ _id, ...rest }) => rest)
+        );
       }
     } else {
       rfqs = await memoryRFQStore.find();

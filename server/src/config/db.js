@@ -1,4 +1,12 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
+
+// Fix for Node.js SRV query lookup on networks/ISPs blocking local SRV resolution
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // Ignore if custom dns is not permitted
+}
 
 export let isConnectedToMongo = false;
 
@@ -6,9 +14,8 @@ export const connectDB = async () => {
   const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/kisandirect';
 
   try {
-    // Attempt Mongoose connection with 2.5s server selection timeout so it doesn't hang
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 2500,
+      serverSelectionTimeoutMS: 5000,
     });
 
     isConnectedToMongo = true;
