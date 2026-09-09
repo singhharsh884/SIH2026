@@ -3,7 +3,7 @@
  * Supports Consumer Shopping Cart and Bulk Buyer RFQ Procurement
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
 const CART_KEY = 'kisandirect_cart';
 const ORDERS_KEY = 'kisandirect_orders';
 const RFQ_KEY = 'kisandirect_rfqs';
