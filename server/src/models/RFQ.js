@@ -41,7 +41,7 @@ const RFQSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Bidding Open', 'Contract Active', 'In Transit', 'Completed'],
+      enum: ['Bidding Open', 'Contract Active', 'Contract Signed', 'In Transit', 'Completed'],
       default: 'Contract Active',
     },
   },
