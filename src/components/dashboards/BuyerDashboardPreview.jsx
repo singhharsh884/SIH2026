@@ -21,11 +21,14 @@ import {
   UserCheck,
   ExternalLink,
   Navigation,
+  QrCode,
 } from 'lucide-react';
 import { AgriSproutIcon } from '../common/AgriPattern';
 import { CreateRFQModal } from './CreateRFQModal';
 import { FarmerContactModal } from './FarmerContactModal';
 import { RouteOptimizer } from './RouteOptimizer';
+import { LotTraceModal } from './LotTraceModal';
+import { MatchingModal } from './MatchingModal';
 import { LanguageToggle } from '../common/LanguageToggle';
 import { useLanguage } from '../../context/LanguageContext';
 import { orderService } from '../../services/orderService';
@@ -47,6 +50,8 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
   const [showRouteOptimizer, setShowRouteOptimizer] = useState(false);
   const [isRFQModalOpen, setIsRFQModalOpen] = useState(false);
   const [notification, setNotification] = useState('');
+  const [traceLot, setTraceLot] = useState(null);
+  const [matchingRFQ, setMatchingRFQ] = useState(null);
 
   const loadCrops = () => {
     cropService.getCrops().then((crops) => setAvailableCrops(crops));
@@ -393,13 +398,25 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
                       <p className="text-[10px] text-slate-400">{t('mandiRate')}: {crop.mandi}</p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleProcureCropLot(crop)}
-                      className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:scale-105 cursor-pointer flex items-center gap-1"
-                    >
-                      <span>{t('procureLot')}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTraceLot({ id: crop._id, name: cropTitle })}
+                        className="p-2 border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                        title="Trace QR Audit Trail"
+                      >
+                        <QrCode className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="hidden sm:inline">Trace</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleProcureCropLot(crop)}
+                        className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:scale-105 cursor-pointer flex items-center gap-1"
+                      >
+                        <span>{t('procureLot')}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -546,11 +563,21 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                     <span className="text-sm font-bold text-emerald-700">{rfq.targetRate || rfq.rate}</span>
                     <span className="text-xs px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full font-medium border border-slate-200">
                       {rfq.status}
                     </span>
+
+                    <button
+                      type="button"
+                      onClick={() => setMatchingRFQ(rfq)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all hover:scale-102"
+                      title="AI Auto-Match Farm Lots"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{t('autoMatchLots') || '⚡ Auto-Match'}</span>
+                    </button>
 
                     <button
                       type="button"
@@ -581,6 +608,23 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
         isOpen={!!selectedFarmer}
         onClose={() => setSelectedFarmer(null)}
         farmer={selectedFarmer}
+      />
+
+      {/* Demand-to-Supply Auto-Matching Modal */}
+      <MatchingModal
+        rfq={matchingRFQ}
+        onClose={() => setMatchingRFQ(null)}
+        onLaunchRoute={() => {
+          setShowRouteOptimizer(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
+      {/* Farm Produce QR & Batch Traceability Modal */}
+      <LotTraceModal
+        cropId={traceLot?.id}
+        cropName={traceLot?.name}
+        onClose={() => setTraceLot(null)}
       />
     </div>
   );

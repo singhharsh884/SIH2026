@@ -178,6 +178,10 @@ class MemoryCropStore {
     return [...this.crops];
   }
 
+  async findById(id) {
+    return this.crops.find((c) => c._id === id) || null;
+  }
+
   async create(data) {
     const newCrop = {
       _id: 'crop_' + Date.now(),

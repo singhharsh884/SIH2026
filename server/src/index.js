@@ -7,6 +7,12 @@ import authRoutes from './routes/authRoutes.js';
 import cropRoutes from './routes/cropRoutes.js';
 import { orderRouter, rfqRouter } from './routes/orderRoutes.js';
 import logisticsRoutes from './routes/logisticsRoutes.js';
+import matchingRoutes from './routes/matchingRoutes.js';
+import fpoRoutes from './routes/fpoRoutes.js';
+import disputeRoutes from './routes/disputeRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
+import telemetryRoutes from './routes/telemetryRoutes.js';
+import { COMMODITY_PROFILES } from './services/routeOptimizerService.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -89,15 +95,50 @@ app.use('/auth', authRoutes);
 
 app.use('/api/crops', cropRoutes);
 app.use('/crops', cropRoutes);
+app.use('/api/lots', cropRoutes); // PRD alias: /api/lots/:id/trace
+app.use('/lots', cropRoutes);
 
 app.use('/api/orders', orderRouter);
 app.use('/orders', orderRouter);
 
 app.use('/api/rfq', rfqRouter);
 app.use('/rfq', rfqRouter);
+app.use('/api/rfqs', rfqRouter); // PRD alias: /api/rfqs/:id/matches
+app.use('/rfqs', rfqRouter);
 
 app.use('/api/logistics', logisticsRoutes);
 app.use('/logistics', logisticsRoutes);
+
+app.use('/api/matching', matchingRoutes);
+app.use('/matching', matchingRoutes);
+
+app.use('/api/fpo', fpoRoutes);
+app.use('/fpo', fpoRoutes);
+
+app.use('/api/disputes', disputeRoutes);
+app.use('/disputes', disputeRoutes);
+
+app.use('/api/analytics', analyticsRoutes);
+app.use('/analytics', analyticsRoutes);
+
+app.use('/api/telemetry', telemetryRoutes);
+app.use('/telemetry', telemetryRoutes);
+
+// PRD Section 13: /api/commodities
+app.get('/api/commodities', (req, res) => {
+  res.status(200).json({
+    success: true,
+    count: Object.keys(COMMODITY_PROFILES).length,
+    data: COMMODITY_PROFILES,
+  });
+});
+app.get('/commodities', (req, res) => {
+  res.status(200).json({
+    success: true,
+    count: Object.keys(COMMODITY_PROFILES).length,
+    data: COMMODITY_PROFILES,
+  });
+});
 
 // 404 handler for undefined routes
 app.use((req, res) => {
@@ -110,8 +151,8 @@ app.use((req, res) => {
 // Centralized error handling
 app.use(errorHandler);
 
-// Only listen on port if running locally (not in serverless environment)
-if (!process.env.VERCEL) {
+// Only listen on port if running locally (not in serverless environment or tests)
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`\n🌱 [KisanDirect API] Server running on http://localhost:${PORT}`);
     console.log(`📡 [Health Check] Available at http://localhost:${PORT}/api/health`);

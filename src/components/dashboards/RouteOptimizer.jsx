@@ -43,10 +43,27 @@ export const RouteOptimizer = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [routeSolution, setRouteSolution] = useState(null);
   const [viewMode, setViewMode] = useState('map'); // 'map' | 'sequence'
+  const [cancellationNotice, setCancellationNotice] = useState(null);
 
   // Simulation state
   const [isSimulating, setIsSimulating] = useState(false);
   const [activeLegIndex, setActiveLegIndex] = useState(0);
+
+  const handleSimulateCancellation = async () => {
+    if (selectedFarmIds.length <= 1) return;
+    const farmToCancel = selectedFarmIds[1] || selectedFarmIds[0];
+    setIsOptimizing(true);
+    const replanned = await logisticsService.replanRoute({
+      farmStopIds: selectedFarmIds,
+      cancelledFarmId: farmToCancel,
+      destinationHubId: selectedHubId,
+      vehicleId: selectedVehicleId,
+    });
+    setSelectedFarmIds((prev) => prev.filter((id) => id !== farmToCancel));
+    setRouteSolution(replanned);
+    setCancellationNotice(replanned.replanNotice);
+    setIsOptimizing(false);
+  };
 
   // Load logistics data on mount
   useEffect(() => {
@@ -286,13 +303,26 @@ export const RouteOptimizer = () => {
             })}
           </div>
 
-          {/* Optimize CTA Button */}
-          <div className="mt-5 flex justify-end">
+          {/* Action Buttons */}
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            {selectedFarmIds.length > 1 && (
+              <button
+                type="button"
+                onClick={handleSimulateCancellation}
+                disabled={isOptimizing}
+                className="px-4 py-2.5 rounded-2xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Simulate a farmer cancelling pickup to test dynamic re-planning (PRD Section 30)"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span>{isHindi ? 'पिकअप रद्द सिमुलेशन (Re-plan)' : 'Simulate Farmer Cancellation & Re-plan'}</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={runOptimization}
               disabled={isOptimizing}
-              className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-2xl font-extrabold text-sm shadow-md shadow-emerald-700/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-2xl font-extrabold text-sm shadow-md shadow-emerald-700/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 ml-auto"
             >
               {isOptimizing ? (
                 <>
@@ -308,6 +338,91 @@ export const RouteOptimizer = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Cancellation Event Notification Banner */}
+      {cancellationNotice && (
+        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-400 text-amber-900 text-xs font-semibold flex items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>{cancellationNotice.event}:</strong> {cancellationNotice.message}
+            </span>
+          </div>
+          <button
+            onClick={() => setCancellationNotice(null)}
+            className="text-amber-700 hover:text-amber-950 font-bold text-xs cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* PRD v2.0.0 Section 15, 16, 18: Feasibility Engine & Routing Provider Banner */}
+      <div className={`p-5 rounded-3xl border shadow-sm ${
+        routeSolution?.feasibility?.status === 'NOT_FEASIBLE'
+          ? 'bg-red-50/90 border-red-200 text-red-900'
+          : 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5">
+            <span className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${
+              routeSolution?.feasibility?.status === 'NOT_FEASIBLE'
+                ? 'bg-red-600 text-white shadow-sm'
+                : 'bg-emerald-600 text-white shadow-sm'
+            }`}>
+              {routeSolution?.feasibility?.status === 'NOT_FEASIBLE' ? (
+                <>
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>ROUTE STATUS: NOT FEASIBLE</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>ROUTE STATUS: FEASIBLE</span>
+                </>
+              )}
+            </span>
+            <span className="text-xs font-semibold text-slate-600">PRD v2.0.0 Feasibility Verification</span>
+          </div>
+
+          <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-slate-900 text-emerald-300 border border-emerald-500/30 font-bold">
+            🗺️ {routeSolution?.routingEngine?.provider || 'OSRM Road Network Engine'}
+          </span>
+        </div>
+
+        {/* Feasibility Checklist Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2 border-t border-slate-200/60">
+          {routeSolution?.feasibility?.checklist?.map((item, idx) => (
+            <div key={idx} className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80 text-xs">
+              <div className="flex items-center gap-1.5 font-bold mb-0.5">
+                <span className={item.passed ? 'text-emerald-600' : 'text-red-600'}>
+                  {item.passed ? '✓' : '✗'}
+                </span>
+                <span className="text-slate-900">{item.criterion}</span>
+              </div>
+              <p className="text-[11px] text-slate-500 line-clamp-2">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Split Recommendation if Overloaded */}
+        {routeSolution?.feasibility?.splitRecommendation && (
+          <div className="mt-3 p-3 bg-red-100/90 rounded-2xl border border-red-300 text-xs text-red-950 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-700 shrink-0 mt-0.5" />
+            <div>
+              <strong>{isHindi ? 'सिफारिश (Split Route):' : 'Engine Recommendation (Split Route):'} </strong>
+              <span>{routeSolution.feasibility.splitRecommendation.explanation}</span>
+              <div className="mt-1 flex flex-wrap gap-2 font-bold text-red-900">
+                {routeSolution.feasibility.splitRecommendation.recommendedVehicles.map((v, i) => (
+                  <span key={i} className="bg-white/80 px-2 py-0.5 rounded border border-red-300 text-[11px]">
+                    🚚 {v.vehicle}: {v.allocatedTons}T
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* AI Telemetry & Savings Comparison Cards */}
@@ -513,6 +628,7 @@ export const RouteOptimizer = () => {
               isSimulating={isSimulating}
               vehicleName={currentVehicle.name}
               onStopClick={(leg, idx) => setActiveLegIndex(idx)}
+              roadPolyline={routeSolution?.routingEngine?.polylineCoordinates}
             />
 
             {/* Quick Waypoint Selector Stepper Strip */}

@@ -19,6 +19,7 @@ import {
   Check,
   X,
   Sparkles,
+  MapPin,
 } from 'lucide-react';
 
 const TILE_PROVIDERS = {
@@ -84,6 +85,42 @@ const TILE_PROVIDERS = {
     requiresKey: true,
     description: 'CARTO raster basemaps. Unregistered requests show an API watermark.',
   },
+  google_roadmap: {
+    id: 'google_roadmap',
+    name: 'Google Maps (Roadmap)',
+    shortName: '🟢 Google Roads',
+    badge: 'Google Platform',
+    url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps',
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    requiresKey: false,
+    description: 'Official Google Maps standard roads, highways, towns and landmarks.',
+  },
+  google_satellite: {
+    id: 'google_satellite',
+    name: 'Google Satellite Hybrid',
+    shortName: '🛰️ Google Hybrid',
+    badge: 'Google Platform',
+    url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps & CNES/Airbus',
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    requiresKey: false,
+    description: 'Google high-resolution satellite photography with street & highway overlays.',
+  },
+  google_terrain: {
+    id: 'google_terrain',
+    name: 'Google Terrain',
+    shortName: '⛰️ Google Terrain',
+    badge: 'Google Platform',
+    url: 'https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    attribution: '&copy; Google Maps',
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    requiresKey: false,
+    description: 'Google physical topography, elevation contours and vegetation.',
+  },
 };
 
 export const DynamicMap = ({
@@ -92,6 +129,7 @@ export const DynamicMap = ({
   isSimulating = false,
   vehicleName = 'Tata 407 Reefer Van',
   onStopClick,
+  roadPolyline = null,
 }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -113,11 +151,77 @@ export const DynamicMap = ({
   const [mapboxToken, setMapboxToken] = useState(() => {
     return localStorage.getItem('kd_mapbox_token') || (import.meta.env?.VITE_MAPBOX_TOKEN || '');
   });
+  const [googleApiKey, setGoogleApiKey] = useState(() => {
+    return localStorage.getItem('kd_google_api_key') || (import.meta.env?.VITE_GOOGLE_MAPS_API_KEY || '');
+  });
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [keySavedToast, setKeySavedToast] = useState(false);
 
+  // Live Browser GPS Geolocation
+  const userLocationMarkerRef = useRef(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocating(false);
+        const { latitude, longitude, accuracy } = pos.coords;
+        setUserLocation({ lat: latitude, lng: longitude, accuracy });
+
+        if (userLocationMarkerRef.current) {
+          map.removeLayer(userLocationMarkerRef.current);
+        }
+
+        const pulseHtml = `
+          <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; width: 32px; height: 32px; border-radius: 50%; background: rgba(59, 130, 246, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+            <div style="width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 3px solid #ffffff; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center;">
+              <div style="width: 6px; height: 6px; border-radius: 50%; background: #ffffff;"></div>
+            </div>
+          </div>
+        `;
+
+        const icon = L.divIcon({
+          html: pulseHtml,
+          className: 'user-pulse-marker',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        });
+
+        userLocationMarkerRef.current = L.marker([latitude, longitude], { icon })
+          .addTo(map)
+          .bindPopup(`
+            <div style="padding: 6px; font-size: 12px; font-family: system-ui, sans-serif; color: #0f172a;">
+              <div style="font-weight: 800; color: #1d4ed8; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">
+                <span>📍 Your Live Device Location</span>
+              </div>
+              <div style="font-family: monospace; font-size: 11px; color: #475569;">${latitude.toFixed(5)}° N, ${longitude.toFixed(5)}° E</div>
+              <div style="font-size: 10px; color: #64748b; margin-top: 3px;">GPS Accuracy: ±${Math.round(accuracy)}m</div>
+            </div>
+          `)
+          .openPopup();
+
+        map.flyTo([latitude, longitude], 14, { duration: 1.5 });
+      },
+      (err) => {
+        setIsLocating(false);
+        alert('Could not retrieve GPS location: ' + err.message);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   // Helper to attach/update Leaflet tile layer
-  const applyTileLayer = (map, layerId, cKey) => {
+  const applyTileLayer = (map, layerId, cKey, gKey) => {
     if (!map) return;
 
     if (tileLayerRef.current) {
@@ -135,6 +239,11 @@ export const DynamicMap = ({
     // Attach API Key if CARTO
     if (tileConf.id === 'carto' && cKey) {
       targetUrl = `${tileConf.url}?api_key=${encodeURIComponent(cKey)}`;
+    }
+
+    // Attach API Key if Google Maps Platform Key Provided
+    if (tileConf.id.startsWith('google') && gKey) {
+      targetUrl = `${tileConf.url}&key=${encodeURIComponent(gKey)}`;
     }
 
     const tileOpts = {
@@ -185,7 +294,7 @@ export const DynamicMap = ({
     L.control.zoom({ position: 'topright' }).addTo(map);
 
     // Initial tile layer
-    applyTileLayer(map, activeLayer, cartoApiKey);
+    applyTileLayer(map, activeLayer, cartoApiKey, googleApiKey);
 
     mapInstanceRef.current = map;
 
@@ -200,12 +309,12 @@ export const DynamicMap = ({
     };
   }, []);
 
-  // Update tile provider when activeLayer or cartoApiKey changes
+  // Update tile provider when activeLayer, cartoApiKey or googleApiKey changes
   useEffect(() => {
     if (mapInstanceRef.current) {
-      applyTileLayer(mapInstanceRef.current, activeLayer, cartoApiKey);
+      applyTileLayer(mapInstanceRef.current, activeLayer, cartoApiKey, googleApiKey);
     }
-  }, [activeLayer, cartoApiKey]);
+  }, [activeLayer, cartoApiKey, googleApiKey]);
 
   // Render Waypoint Markers & Polyline Route
   useEffect(() => {
@@ -220,7 +329,10 @@ export const DynamicMap = ({
     if (haloPolylineRef.current) map.removeLayer(haloPolylineRef.current);
     if (truckMarkerRef.current) map.removeLayer(truckMarkerRef.current);
 
-    const latLngs = legs.map((leg) => [leg.lat, leg.lng]);
+    const latLngs =
+      roadPolyline && roadPolyline.length > 1
+        ? roadPolyline
+        : legs.map((leg) => [leg.lat, leg.lng]);
 
     // 1. Draw Polyline Glow Halo
     haloPolylineRef.current = L.polyline(latLngs, {
@@ -451,6 +563,18 @@ export const DynamicMap = ({
           <Key className="w-3.5 h-3.5 text-amber-400" />
           <span className="hidden sm:inline">API Keys</span>
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Default layers 100% Free" />
+        </button>
+
+        {/* Live Device GPS Geolocation Button */}
+        <button
+          type="button"
+          onClick={handleLocateMe}
+          disabled={isLocating}
+          className="p-2 bg-slate-900/90 backdrop-blur-md hover:bg-slate-800 text-white rounded-2xl border border-white/15 shadow-lg transition-colors cursor-pointer text-xs font-bold flex items-center gap-1.5"
+          title="Detect My Live Device GPS Location"
+        >
+          <MapPin className={`w-3.5 h-3.5 ${isLocating ? 'text-amber-400 animate-spin' : 'text-blue-400'}`} />
+          <span className="hidden sm:inline">{isLocating ? 'Locating...' : 'My GPS'}</span>
         </button>
 
         {/* Fit Route Bounds Button */}

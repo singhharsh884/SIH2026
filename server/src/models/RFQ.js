@@ -95,6 +95,10 @@ class MemoryRFQStore {
     return [...this.rfqs];
   }
 
+  async findById(id) {
+    return this.rfqs.find((r) => r._id === id) || null;
+  }
+
   async create(data) {
     const newRFQ = {
       _id: 'rfq_' + Date.now(),

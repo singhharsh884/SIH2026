@@ -7,8 +7,8 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: [true, 'User role is required'],
       enum: {
-        values: ['farmer', 'consumer', 'buyer'],
-        message: '{VALUE} is not a valid role. Choose farmer, consumer, or buyer',
+        values: ['farmer', 'consumer', 'buyer', 'fpo'],
+        message: '{VALUE} is not a valid role. Choose farmer, consumer, buyer, or fpo',
       },
       index: true,
     },
@@ -39,6 +39,20 @@ const UserSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: '',
+    },
+    fpoName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    registrationNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    memberFarmersCount: {
+      type: Number,
+      default: 0,
     },
 
     // Role-specific fields: Consumer
