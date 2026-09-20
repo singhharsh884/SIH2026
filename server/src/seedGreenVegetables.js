@@ -4,7 +4,9 @@ import { CropModel } from './models/Crop.js';
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/kisandirect';
+const DEFAULT_ATLAS_URI =
+  'mongodb+srv://singhharsh2655_db_user:yqPJ3l2Faio4SN4T@sih2026.cunpyyc.mongodb.net/harsh?retryWrites=true&w=majority';
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || DEFAULT_ATLAS_URI;
 
 const cropsToSeedOrUpdate = [
   {
