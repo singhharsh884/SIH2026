@@ -10,26 +10,31 @@ import { isConnectedToMongo } from '../config/db.js';
 export const getCrops = async (req, res, next) => {
   try {
     let crops;
-    if (isConnectedToMongo) {
-      crops = await CropModel.find().sort({ createdAt: -1 });
-      // If DB has no crops, seed them once
-      if (crops.length === 0) {
-        const seedData = await memoryCropStore.find();
-        crops = await CropModel.insertMany(
-          seedData.map((s) => ({
-            cropName: s.cropName,
-            category: s.category,
-            quantity: s.quantity,
-            price: s.price,
-            mandi: s.mandi,
-            status: s.status,
-            harvestDate: s.harvestDate,
-            farmName: s.farmName,
-            location: s.location,
-            farmerName: s.farmerName,
-            farmerMobile: s.farmerMobile,
-          }))
-        );
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        crops = await CropModel.find().sort({ createdAt: -1 });
+        // If DB has no crops, seed them once
+        if (crops.length === 0) {
+          const seedData = await memoryCropStore.find();
+          crops = await CropModel.insertMany(
+            seedData.map((s) => ({
+              cropName: s.cropName,
+              category: s.category,
+              quantity: s.quantity,
+              price: s.price,
+              mandi: s.mandi,
+              status: s.status,
+              harvestDate: s.harvestDate,
+              farmName: s.farmName,
+              location: s.location,
+              farmerName: s.farmerName,
+              farmerMobile: s.farmerMobile,
+            }))
+          );
+        }
+      } catch (dbErr) {
+        crops = await memoryCropStore.find();
       }
     } else {
       crops = await memoryCropStore.find();
@@ -98,8 +103,13 @@ export const addCrop = async (req, res, next) => {
     };
 
     let createdCrop;
-    if (isConnectedToMongo) {
-      createdCrop = await CropModel.create(cropData);
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        createdCrop = await CropModel.create(cropData);
+      } catch (err) {
+        createdCrop = await memoryCropStore.create(cropData);
+      }
     } else {
       createdCrop = await memoryCropStore.create(cropData);
     }
@@ -122,9 +132,14 @@ export const addCrop = async (req, res, next) => {
 export const deleteCrop = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
 
-    if (isConnectedToMongo) {
-      await CropModel.findByIdAndDelete(id);
+    if (hasLiveMongo) {
+      try {
+        await CropModel.findByIdAndDelete(id);
+      } catch (err) {
+        await memoryCropStore.findByIdAndDelete(id);
+      }
     } else {
       await memoryCropStore.findByIdAndDelete(id);
     }

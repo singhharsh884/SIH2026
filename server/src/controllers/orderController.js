@@ -113,8 +113,13 @@ export const createOrder = async (req, res, next) => {
     };
 
     let newOrder;
-    if (isConnectedToMongo) {
-      newOrder = await OrderModel.create(orderPayload);
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        newOrder = await OrderModel.create(orderPayload);
+      } catch (err) {
+        newOrder = await memoryOrderStore.create(orderPayload);
+      }
     } else {
       newOrder = await memoryOrderStore.create(orderPayload);
     }
@@ -136,8 +141,13 @@ export const createOrder = async (req, res, next) => {
 export const getOrders = async (req, res, next) => {
   try {
     let orders;
-    if (isConnectedToMongo) {
-      orders = await OrderModel.find().sort({ createdAt: -1 });
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        orders = await OrderModel.find().sort({ createdAt: -1 });
+      } catch (err) {
+        orders = await memoryOrderStore.find();
+      }
     } else {
       orders = await memoryOrderStore.find();
     }
@@ -377,13 +387,18 @@ export const releaseOrderPayout = async (req, res, next) => {
 export const getRFQs = async (req, res, next) => {
   try {
     let rfqs;
-    if (isConnectedToMongo) {
-      rfqs = await RFQModel.find().sort({ createdAt: -1 });
-      if (rfqs.length === 0) {
-        const seed = await memoryRFQStore.find();
-        rfqs = await RFQModel.insertMany(
-          seed.map(({ _id, ...rest }) => rest)
-        );
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        rfqs = await RFQModel.find().sort({ createdAt: -1 });
+        if (rfqs.length === 0) {
+          const seed = await memoryRFQStore.find();
+          rfqs = await RFQModel.insertMany(
+            seed.map(({ _id, ...rest }) => rest)
+          );
+        }
+      } catch (err) {
+        rfqs = await memoryRFQStore.find();
       }
     } else {
       rfqs = await memoryRFQStore.find();
@@ -437,8 +452,13 @@ export const createRFQ = async (req, res, next) => {
     };
 
     let newRFQ;
-    if (isConnectedToMongo) {
-      newRFQ = await RFQModel.create(rfqPayload);
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        newRFQ = await RFQModel.create(rfqPayload);
+      } catch (err) {
+        newRFQ = await memoryRFQStore.create(rfqPayload);
+      }
     } else {
       newRFQ = await memoryRFQStore.create(rfqPayload);
     }
@@ -460,8 +480,13 @@ export const createRFQ = async (req, res, next) => {
 export const deleteRFQ = async (req, res, next) => {
   try {
     const { id } = req.params;
-    if (isConnectedToMongo) {
-      await RFQModel.findByIdAndDelete(id);
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        await RFQModel.findByIdAndDelete(id);
+      } catch (err) {
+        await memoryRFQStore.findByIdAndDelete(id);
+      }
     } else {
       await memoryRFQStore.findByIdAndDelete(id);
     }
