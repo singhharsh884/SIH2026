@@ -12,6 +12,7 @@ import fpoRoutes from './routes/fpoRoutes.js';
 import disputeRoutes from './routes/disputeRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import telemetryRoutes from './routes/telemetryRoutes.js';
+import simulationRoutes from './routes/simulationRoutes.js';
 import { COMMODITY_PROFILES } from './services/routeOptimizerService.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -115,6 +116,9 @@ app.use('/analytics', analyticsRoutes);
 
 app.use('/api/telemetry', telemetryRoutes);
 app.use('/telemetry', telemetryRoutes);
+
+app.use('/api/simulation', simulationRoutes);
+app.use('/simulation', simulationRoutes);
 
 // PRD Section 13: /api/commodities
 app.get('/api/commodities', (req, res) => {

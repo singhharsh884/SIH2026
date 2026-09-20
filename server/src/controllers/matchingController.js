@@ -76,9 +76,28 @@ export const findMatchesForDemand = async (req, res, next) => {
 
     // Merge with registered FARM_CLUSTERS to ensure realistic GPS coordinates and farm contacts
     const candidateLots = availableCrops.map((crop, idx) => {
-      const clusterMatch = FARM_CLUSTERS[idx % FARM_CLUSTERS.length];
-      const cropKg = parseQuantityToKg(crop.quantity);
+      let clusterMatch = null;
+      if (crop.location) {
+        const cropLocLower = crop.location.toLowerCase();
+        clusterMatch = FARM_CLUSTERS.find((fc) => {
+          const fcLocLower = fc.location.toLowerCase();
+          const fcClusterLower = fc.cluster.toLowerCase();
+          return (
+            (cropLocLower.includes('lucknow') && fcLocLower.includes('lucknow')) ||
+            (cropLocLower.includes('malihabad') && fcLocLower.includes('malihabad')) ||
+            (cropLocLower.includes('mohanlalganj') && fcLocLower.includes('mohanlalganj')) ||
+            (cropLocLower.includes('bakshi') && fcLocLower.includes('bakshi')) ||
+            (cropLocLower.includes('niphad') && fcLocLower.includes('niphad')) ||
+            (cropLocLower.includes('pune') && fcLocLower.includes('pune')) ||
+            (cropLocLower.includes('dindori') && fcLocLower.includes('dindori'))
+          );
+        });
+      }
+      if (!clusterMatch) {
+        clusterMatch = FARM_CLUSTERS[idx % FARM_CLUSTERS.length];
+      }
 
+      const cropKg = parseQuantityToKg(crop.quantity);
       const lat = clusterMatch?.lat || 20.082;
       const lng = clusterMatch?.lng || 74.112;
       const distanceToBuyer = calculateDistanceKm(buyerLocation.lat, buyerLocation.lng, lat, lng);
