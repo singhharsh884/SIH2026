@@ -13,15 +13,18 @@ import {
   Trash2,
   CheckCircle2,
   Layers,
+  Building2,
 } from 'lucide-react';
 import { AgriSproutIcon } from '../common/AgriPattern';
 import { AddCropModal } from './AddCropModal';
+import { FpoAggregationModal } from './FpoAggregationModal';
 import { LanguageToggle } from '../common/LanguageToggle';
 import { cropService } from '../../services/cropService';
 import { useLanguage } from '../../context/LanguageContext';
 
 export const FarmerDashboardPreview = ({ session, onLogout }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isHindi = language === 'hi';
 
   const user = session?.user || {
     name: 'Rameshwar Patel',
@@ -32,6 +35,7 @@ export const FarmerDashboardPreview = ({ session, onLogout }) => {
 
   const [crops, setCrops] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isFpoModalOpen, setIsFpoModalOpen] = useState(false);
   const [notification, setNotification] = useState('');
 
   // Load crops on mount
@@ -201,15 +205,27 @@ export const FarmerDashboardPreview = ({ session, onLogout }) => {
               <p className="text-xs text-slate-500">{t('catalogSubheading')}</p>
             </div>
 
-            {/* WORKING ADD CROP BUTTON */}
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-sm font-bold shadow-md shadow-emerald-700/20 transition-all cursor-pointer transform hover:-translate-y-0.5"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>{t('addCropBtn')}</span>
-            </button>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* FPO Consignment Aggregation Button (PRD Section 9) */}
+              <button
+                type="button"
+                onClick={() => setIsFpoModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-teal-800 to-emerald-900 hover:from-teal-900 hover:to-emerald-950 text-emerald-200 border border-emerald-700/50 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer transform hover:-translate-y-0.5"
+              >
+                <Layers className="w-4 h-4 text-emerald-400" />
+                <span>{isHindi ? 'FPO लॉट एकत्रीकरण (PRD 9)' : 'FPO Aggregation Console'}</span>
+              </button>
+
+              {/* WORKING ADD CROP BUTTON */}
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-700/20 transition-all cursor-pointer transform hover:-translate-y-0.5"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>{t('addCropBtn')}</span>
+              </button>
+            </div>
           </div>
 
           <div className="divide-y divide-slate-100">
@@ -277,6 +293,16 @@ export const FarmerDashboardPreview = ({ session, onLogout }) => {
         defaultFarmerMobile={user.mobile || '+91 98231 45678'}
         defaultFarm={user.businessName || 'Krishi Vikas FPO'}
         defaultLocation={user.location || 'Nashik, Maharashtra'}
+      />
+
+      {/* FPO Aggregation Modal Component (PRD Section 9) */}
+      <FpoAggregationModal
+        isOpen={isFpoModalOpen}
+        onClose={() => setIsFpoModalOpen(false)}
+        onConsignmentCreated={(consignment) => {
+          setNotification(`FPO Consignment #${consignment.consignmentId} successfully aggregated and dispatched!`);
+          setTimeout(() => setNotification(''), 5000);
+        }}
       />
     </div>
   );

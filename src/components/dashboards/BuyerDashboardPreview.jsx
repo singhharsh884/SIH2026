@@ -22,6 +22,9 @@ import {
   ExternalLink,
   Navigation,
   QrCode,
+  Scale,
+  ShieldAlert,
+  CheckCheck,
 } from 'lucide-react';
 import { AgriSproutIcon } from '../common/AgriPattern';
 import { CreateRFQModal } from './CreateRFQModal';
@@ -29,6 +32,7 @@ import { FarmerContactModal } from './FarmerContactModal';
 import { RouteOptimizer } from './RouteOptimizer';
 import { LotTraceModal } from './LotTraceModal';
 import { MatchingModal } from './MatchingModal';
+import { DisputeModal } from './DisputeModal';
 import { LanguageToggle } from '../common/LanguageToggle';
 import { useLanguage } from '../../context/LanguageContext';
 import { orderService } from '../../services/orderService';
@@ -45,25 +49,34 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
   };
 
   const [rfqs, setRfqs] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [availableCrops, setAvailableCrops] = useState([]);
   const [selectedFarmer, setSelectedFarmer] = useState(null);
   const [showRouteOptimizer, setShowRouteOptimizer] = useState(false);
   const [isRFQModalOpen, setIsRFQModalOpen] = useState(false);
+  const [selectedDisputeOrder, setSelectedDisputeOrder] = useState(null);
   const [notification, setNotification] = useState('');
   const [traceLot, setTraceLot] = useState(null);
   const [matchingRFQ, setMatchingRFQ] = useState(null);
+  const [releasedPayouts, setReleasedPayouts] = useState({});
 
   const loadCrops = () => {
     cropService.getCrops().then((crops) => setAvailableCrops(crops));
   };
 
+  const loadOrders = () => {
+    orderService.getOrders().then((data) => setOrders(data || []));
+  };
+
   // Fetch RFQs and Farm Lots on mount and subscribe to updates
   useEffect(() => {
     orderService.getRFQs().then((data) => setRfqs(data));
+    loadOrders();
     loadCrops();
 
     const handleUpdate = () => {
       loadCrops();
+      loadOrders();
     };
 
     window.addEventListener('kisandirect_crops_updated', handleUpdate);
@@ -593,6 +606,160 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
             )}
           </div>
         </div>
+
+        {/* 4-Stage Weighing Reconciliation & Farmer Payout Escrow Console (PRD Section 24, 26, 27) */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-sm mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-extrabold text-slate-900">
+                  {language === 'hi' ? 'ऑर्डर सत्यापन, 4-स्टेज वजन मिलान व किसान पेआउट' : 'Procurement Orders, 4-Stage Weighing & Farmer Payouts'}
+                </h2>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                  PRD Section 24 & 26
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {language === 'hi'
+                  ? 'खेत से डिलीवरी तक 4-चरण वजन सत्यापन, नमी संकोचन (<2.5%) व 90% प्रत्यक्ष किसान भुगतान'
+                  : '4-checkpoint moisture shrinkage audit, automated escrow release & dispute arbitration'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {orders.length === 0 ? (
+              <p className="text-xs text-slate-400 py-4 text-center">No active procurement orders found.</p>
+            ) : (
+              orders.slice(0, 3).map((ord) => {
+                const recon = ord.weighingReconciliation || {
+                  farmerDeclaredKg: 1000,
+                  farmgateWeighedKg: 996,
+                  hubWeighedKg: 990,
+                  buyerReceivedKg: 988,
+                  shrinkageVarianceKg: 12,
+                  shrinkagePercent: 1.2,
+                  status: 'WITHIN_TOLERANCE',
+                };
+                const isPaid = releasedPayouts[ord.orderId || ord._id] || ord.status === 'PAYOUT_RELEASED';
+                const grossAmount = ord.totalAmount || 32000;
+                const logistics = Math.round(grossAmount * 0.085);
+                const platform = Math.round(grossAmount * 0.015);
+                const netFarmer = grossAmount - logistics - platform;
+
+                return (
+                  <div
+                    key={ord._id || ord.orderId}
+                    className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all space-y-3"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-900 font-mono">
+                            {ord.orderId || 'KD-2026-7841'}
+                          </span>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                            {ord.status || 'IN_TRANSIT'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Buyer: <strong>{ord.customerName}</strong> • Delivery: {ord.deliveryAddress || 'Gomti Nagar / Vashi Hub'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-slate-900">
+                          ₹{grossAmount.toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-mono font-bold">
+                          Escrow Locked
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 4-Stage Quantity & Moisture Shrinkage Reconciliation Visual Bar (PRD Section 24) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5 text-[11px]">
+                        <span className="font-bold text-slate-700 flex items-center gap-1">
+                          <Scale className="w-3.5 h-3.5 text-emerald-600" />
+                          4-Stage Weighing & Moisture Audit:
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.2 rounded">
+                          {recon.shrinkagePercent || 1.2}% Moisture Shrinkage • {recon.status || 'WITHIN_TOLERANCE'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                        <div className="p-2 bg-white rounded-xl border border-slate-200">
+                          <span className="text-[10px] text-slate-400 block">1. Farmer Declared</span>
+                          <strong className="text-slate-800 text-xs font-mono">{recon.farmerDeclaredKg || 1000} kg</strong>
+                        </div>
+                        <div className="p-2 bg-white rounded-xl border border-slate-200">
+                          <span className="text-[10px] text-slate-400 block">2. Farmgate Weighed</span>
+                          <strong className="text-slate-800 text-xs font-mono">{recon.farmgateWeighedKg || 996} kg</strong>
+                        </div>
+                        <div className="p-2 bg-white rounded-xl border border-slate-200">
+                          <span className="text-[10px] text-slate-400 block">3. Hub Received</span>
+                          <strong className="text-slate-800 text-xs font-mono">{recon.hubWeighedKg || 990} kg</strong>
+                        </div>
+                        <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-200">
+                          <span className="text-[10px] text-emerald-700 block">4. Buyer Received</span>
+                          <strong className="text-emerald-900 text-xs font-mono">{recon.buyerReceivedKg || 988} kg</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Unit Economics & Farmer Payout Action (PRD Section 26 & 36) */}
+                    <div className="p-3 bg-gradient-to-r from-emerald-900 to-teal-950 text-white rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-emerald-300 tracking-wide block">
+                          Transparent Unit Economics Realization (90.0%)
+                        </span>
+                        <p className="text-xs text-emerald-100 mt-0.5">
+                          Gross ₹{grossAmount.toLocaleString('en-IN')} - Logistics ₹{logistics} (8.5%) - Platform ₹{platform} (1.5%) =
+                          <strong className="text-white text-sm font-black ml-1 text-emerald-300">Net Farmer ₹{netFarmer.toLocaleString('en-IN')}</strong>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        {/* Quality Dispute Button (PRD Section 27) */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDisputeOrder(ord)}
+                          className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                          title="Raise Quality Dispute on this Order"
+                        >
+                          <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                          <span>{language === 'hi' ? 'विवाद दर्ज करें' : 'Raise Dispute'}</span>
+                        </button>
+
+                        {/* Release Payout Button (PRD Section 26) */}
+                        <button
+                          type="button"
+                          disabled={isPaid}
+                          onClick={async () => {
+                            const res = await orderService.releasePayout(ord.orderId || ord._id);
+                            setReleasedPayouts((prev) => ({ ...prev, [ord.orderId || ord._id]: true }));
+                            setNotification(`Farmer Payout ₹${netFarmer.toLocaleString('en-IN')} settled directly to farmer bank via UPI!`);
+                            setTimeout(() => setNotification(''), 5000);
+                          }}
+                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1 shrink-0 cursor-pointer ${
+                            isPaid
+                              ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 cursor-default'
+                              : 'bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-black hover:scale-102'
+                          }`}
+                        >
+                          <CheckCheck className="w-3.5 h-3.5" />
+                          <span>{isPaid ? (language === 'hi' ? 'भुगतान जारी ✓' : 'Payout Settled ✓') : (language === 'hi' ? 'किसान भुगतान जारी करें (UPI)' : 'Release Payout (UPI)')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
       </main>
 
       {/* Create RFQ Modal */}
@@ -625,6 +792,17 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
         cropId={traceLot?.id}
         cropName={traceLot?.name}
         onClose={() => setTraceLot(null)}
+      />
+
+      {/* Quality Dispute Resolution Modal (PRD Section 27) */}
+      <DisputeModal
+        isOpen={!!selectedDisputeOrder}
+        order={selectedDisputeOrder}
+        onClose={() => setSelectedDisputeOrder(null)}
+        onDisputeCreated={(dispute) => {
+          setNotification(`Dispute Ticket #${dispute.disputeId} logged with cold-chain audit evidence.`);
+          setTimeout(() => setNotification(''), 5000);
+        }}
       />
     </div>
   );

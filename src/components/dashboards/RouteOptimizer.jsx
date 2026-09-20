@@ -21,9 +21,11 @@ import {
   Layers,
   Building2,
   Calendar,
-  Cpu,
+  AlertOctagon,
+  BellRing,
 } from 'lucide-react';
 import { logisticsService, FALLBACK_HUBS, FALLBACK_FARMS, FALLBACK_VEHICLES } from '../../services/logisticsService';
+import { orderService } from '../../services/orderService';
 import { useLanguage } from '../../context/LanguageContext';
 import { DynamicMap } from '../common/DynamicMap';
 
@@ -48,6 +50,21 @@ export const RouteOptimizer = () => {
   // Simulation state
   const [isSimulating, setIsSimulating] = useState(false);
   const [activeLegIndex, setActiveLegIndex] = useState(0);
+
+  // Cold-chain IoT Telemetry & Breach Simulator state (PRD Section 20)
+  const [isBreached, setIsBreached] = useState(false);
+  const [simulatedTemp, setSimulatedTemp] = useState(3.6);
+  const [isTogglingBreach, setIsTogglingBreach] = useState(false);
+
+  const handleToggleBreach = async () => {
+    setIsTogglingBreach(true);
+    const nextBreach = !isBreached;
+    const temp = nextBreach ? 8.6 : 3.6;
+    setIsBreached(nextBreach);
+    setSimulatedTemp(temp);
+    await orderService.simulateBreach(temp, !nextBreach);
+    setIsTogglingBreach(false);
+  };
 
   const handleSimulateCancellation = async () => {
     if (selectedFarmIds.length <= 1) return;
@@ -423,6 +440,67 @@ export const RouteOptimizer = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* IoT Reefer Telemetry & Temperature Breach Simulator Banner (PRD Section 20 & 21) */}
+      <div
+        className={`p-4 rounded-3xl border transition-all duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm ${
+          isBreached
+            ? 'bg-red-50 border-red-400 ring-2 ring-red-500/40 animate-pulse'
+            : 'bg-emerald-950 border-emerald-800 text-white'
+        }`}
+      >
+        <div className="flex items-center gap-3.5">
+          <div
+            className={`p-3 rounded-2xl flex items-center justify-center ${
+              isBreached ? 'bg-red-600 text-white' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+            }`}
+          >
+            {isBreached ? <AlertOctagon className="w-6 h-6 animate-bounce" /> : <Thermometer className="w-6 h-6" />}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                  isBreached ? 'bg-red-600 text-white' : 'bg-emerald-500/20 text-emerald-300'
+                }`}
+              >
+                {isBreached ? '🚨 TEMPERATURE BREACH ALERT' : '✅ COMPLIANT REEFER COLD-CHAIN'}
+              </span>
+              <span className={`text-xs font-mono font-bold ${isBreached ? 'text-red-900' : 'text-emerald-400'}`}>
+                {simulatedTemp}°C (Target: 2.0°C - 4.5°C)
+              </span>
+            </div>
+            <p className={`text-xs mt-1 ${isBreached ? 'text-red-800 font-semibold' : 'text-emerald-200/80'}`}>
+              {isBreached
+                ? 'CRITICAL: Chiller compressor pressure drop / door ajar event. Automated mitigation alert sent to driver!'
+                : 'Active continuous IoT telemetry: Refrigeration compressor nominal, relative humidity 95%, 0% thermal decay.'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          disabled={isTogglingBreach}
+          onClick={handleToggleBreach}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer shrink-0 ${
+            isBreached
+              ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
+              : 'bg-red-600 hover:bg-red-700 text-white'
+          }`}
+        >
+          {isBreached ? (
+            <>
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{isHindi ? 'शीतलन बहाल करें (Restore 3.6°C)' : 'Restore Compliant Chilling (3.6°C)'}</span>
+            </>
+          ) : (
+            <>
+              <BellRing className="w-4 h-4 animate-bounce" />
+              <span>{isHindi ? '🚨 तापमान उल्लंघन सिमुलेट करें (8.6°C)' : '🚨 Simulate Temp Breach (8.6°C)'}</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* AI Telemetry & Savings Comparison Cards */}

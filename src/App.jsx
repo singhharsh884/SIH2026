@@ -6,15 +6,17 @@ import { FarmerDashboardPreview } from './components/dashboards/FarmerDashboardP
 import { MarketplacePreview } from './components/dashboards/MarketplacePreview';
 import { BuyerDashboardPreview } from './components/dashboards/BuyerDashboardPreview';
 import { RouteOptimizerPreview } from './components/dashboards/RouteOptimizerPreview';
+import { SihDemoWalkthroughModal } from './components/dashboards/SihDemoWalkthroughModal';
 import { authService } from './services/authService';
 import { LanguageToggle } from './components/common/LanguageToggle';
 import { useLanguage } from './context/LanguageContext';
 
 export function App() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [role, setRole] = useState('farmer'); // 'farmer' | 'consumer' | 'buyer'
   const [session, setSession] = useState(null);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
   const [backendStatus, setBackendStatus] = useState({ checked: false, online: false, database: '' });
@@ -95,17 +97,15 @@ export function App() {
 
   // If user is authenticated, route to corresponding role dashboard view
   if (session) {
+    let dashboardContent = null;
     if (session.redirectUrl === '/farmer/dashboard' || session.role === 'farmer') {
-      return <FarmerDashboardPreview session={session} onLogout={handleLogout} />;
-    }
-    if (session.redirectUrl === '/marketplace' || session.role === 'consumer') {
-      return <MarketplacePreview session={session} onLogout={handleLogout} />;
-    }
-    if (session.redirectUrl === '/buyer/dashboard' || session.role === 'buyer') {
-      return <BuyerDashboardPreview session={session} onLogout={handleLogout} />;
-    }
-    if (session.redirectUrl === '/logistics/routes' || session.role === 'logistics') {
-      return (
+      dashboardContent = <FarmerDashboardPreview session={session} onLogout={handleLogout} />;
+    } else if (session.redirectUrl === '/marketplace' || session.role === 'consumer') {
+      dashboardContent = <MarketplacePreview session={session} onLogout={handleLogout} />;
+    } else if (session.redirectUrl === '/buyer/dashboard' || session.role === 'buyer') {
+      dashboardContent = <BuyerDashboardPreview session={session} onLogout={handleLogout} />;
+    } else if (session.redirectUrl === '/logistics/routes' || session.role === 'logistics') {
+      dashboardContent = (
         <RouteOptimizerPreview
           session={session}
           onLogout={handleLogout}
@@ -119,6 +119,28 @@ export function App() {
         />
       );
     }
+
+    return (
+      <>
+        {dashboardContent}
+
+        {/* Floating 1-Click SIH Pitch Walkthrough button */}
+        <button
+          type="button"
+          onClick={() => setIsDemoModalOpen(true)}
+          className="fixed bottom-5 right-5 z-40 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border-2 border-amber-300 animate-bounce cursor-pointer transition-all hover:scale-105"
+          title="Open Official SIH 12-Step Pitch Walkthrough (PRD Section 47)"
+        >
+          <span className="text-base">⚡</span>
+          <span className="text-xs">{language === 'hi' ? '12-स्टेप SIH पिच' : 'SIH 12-Step Pitch (PRD 47)'}</span>
+        </button>
+
+        <SihDemoWalkthroughModal
+          isOpen={isDemoModalOpen}
+          onClose={() => setIsDemoModalOpen(false)}
+        />
+      </>
+    );
   }
 
   return (
@@ -210,6 +232,16 @@ export function App() {
             <span>🚚</span>
             <span>{t('routeOptimizerNav')}</span>
           </button>
+
+          {/* 12-Step SIH Demo Quick Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setIsDemoModalOpen(true)}
+            className="text-[11px] bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+          >
+            <span>⚡</span>
+            <span>{language === 'hi' ? '12-स्टेप SIH पिच' : '12-Step Pitch (PRD 47)'}</span>
+          </button>
         </div>
       </div>
 
@@ -241,6 +273,22 @@ export function App() {
           />
         )}
       </AuthLayout>
+
+      {/* Floating 1-Click SIH Pitch Walkthrough button */}
+      <button
+        type="button"
+        onClick={() => setIsDemoModalOpen(true)}
+        className="fixed bottom-5 right-5 z-40 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border-2 border-amber-300 animate-bounce cursor-pointer transition-all hover:scale-105"
+        title="Open Official SIH 12-Step Pitch Walkthrough (PRD Section 47)"
+      >
+        <span className="text-base">⚡</span>
+        <span className="text-xs">{language === 'hi' ? '12-स्टेप SIH पिच' : 'SIH 12-Step Pitch (PRD 47)'}</span>
+      </button>
+
+      <SihDemoWalkthroughModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 }
