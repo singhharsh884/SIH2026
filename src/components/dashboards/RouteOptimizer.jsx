@@ -442,39 +442,44 @@ export const RouteOptimizer = () => {
         )}
       </div>
 
-      {/* IoT Reefer Telemetry & Temperature Breach Simulator Banner (PRD Section 20 & 21) */}
+      {/* IoT Reefer Telemetry & Temperature Breach Mission-Control Card (PRD Section 20 & 21) */}
       <div
-        className={`p-4 rounded-3xl border transition-all duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm ${
+        className={`p-4 rounded-xl border transition-all duration-300 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-card ${
           isBreached
-            ? 'bg-red-50 border-red-400 ring-2 ring-red-500/40 animate-pulse'
-            : 'bg-emerald-950 border-emerald-800 text-white'
+            ? 'bg-rose-950 border-rose-800 text-rose-100 ring-1 ring-rose-600/50'
+            : 'bg-slate-950 border-slate-800 text-white'
         }`}
       >
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-start sm:items-center gap-3.5 flex-1">
           <div
-            className={`p-3 rounded-2xl flex items-center justify-center ${
-              isBreached ? 'bg-red-600 text-white' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+            className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${
+              isBreached ? 'bg-rose-600 text-white' : 'bg-slate-900 text-emerald-400 border border-slate-800'
             }`}
           >
-            {isBreached ? <AlertOctagon className="w-6 h-6 animate-bounce" /> : <Thermometer className="w-6 h-6" />}
+            {isBreached ? <AlertOctagon className="w-5 h-5 text-white" /> : <Thermometer className="w-5 h-5" />}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
               <span
-                className={`text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                  isBreached ? 'bg-red-600 text-white' : 'bg-emerald-500/20 text-emerald-300'
+                className={`text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded ${
+                  isBreached ? 'bg-rose-800 text-white border border-rose-600' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                 }`}
               >
-                {isBreached ? '🚨 TEMPERATURE BREACH ALERT' : '✅ COMPLIANT REEFER COLD-CHAIN'}
+                {isBreached ? 'CRITICAL THERMAL BREACH' : 'COMPLIANT COLD-CHAIN'}
               </span>
-              <span className={`text-xs font-mono font-bold ${isBreached ? 'text-red-900' : 'text-emerald-400'}`}>
-                {simulatedTemp}°C (Target: 2.0°C - 4.5°C)
+              <span className={`text-sm font-mono font-bold tabular-nums ${isBreached ? 'text-rose-300' : 'text-emerald-400'}`}>
+                {simulatedTemp}°C
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">
+                (Target Range: 2.0°C - 4.0°C • Spinach Spec)
               </span>
             </div>
-            <p className={`text-xs mt-1 ${isBreached ? 'text-red-800 font-semibold' : 'text-emerald-200/80'}`}>
+
+            <p className={`text-xs mt-1 leading-relaxed ${isBreached ? 'text-rose-200' : 'text-slate-400'}`}>
               {isBreached
-                ? 'CRITICAL: Chiller compressor pressure drop / door ajar event. Automated mitigation alert sent to driver!'
-                : 'Active continuous IoT telemetry: Refrigeration compressor nominal, relative humidity 95%, 0% thermal decay.'}
+                ? 'CRITICAL ALERT: Reefer cargo temperature breached 8.6°C. Auto-diversion to nearest Lucknow Reefer Depot suggested!'
+                : 'IoT Telemetry Live: Carrier Transicold X4 nominal, humidity 95%, 0% thermal decay across transit legs.'}
             </p>
           </div>
         </div>
@@ -483,21 +488,21 @@ export const RouteOptimizer = () => {
           type="button"
           disabled={isTogglingBreach}
           onClick={handleToggleBreach}
-          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer shrink-0 ${
+          className={`px-3.5 py-2 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0 ${
             isBreached
-              ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
-              : 'bg-red-600 hover:bg-red-700 text-white'
+              ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-bold'
+              : 'bg-rose-600 hover:bg-rose-500 text-white font-bold'
           }`}
         >
           {isBreached ? (
             <>
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{isHindi ? 'शीतलन बहाल करें (Restore 3.6°C)' : 'Restore Compliant Chilling (3.6°C)'}</span>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{isHindi ? 'शीतलन बहाल करें (3.6°C)' : 'Restore Chilling (3.6°C)'}</span>
             </>
           ) : (
             <>
-              <BellRing className="w-4 h-4 animate-bounce" />
-              <span>{isHindi ? '🚨 तापमान उल्लंघन सिमुलेट करें (8.6°C)' : '🚨 Simulate Temp Breach (8.6°C)'}</span>
+              <BellRing className="w-3.5 h-3.5" />
+              <span>{isHindi ? 'तापमान उल्लंघन सिमुलेट करें (8.6°C)' : 'Simulate Temp Breach (8.6°C)'}</span>
             </>
           )}
         </button>
@@ -506,26 +511,26 @@ export const RouteOptimizer = () => {
       {/* AI Telemetry & Savings Comparison Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Route Distance Comparison */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+        <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
               {t('distanceComparison')}
             </span>
-            <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
               -{summary.distanceSavedPercent || 0}%
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">
+            <span className="text-2xl font-bold text-slate-900 tabular-nums">
               {summary.optimizedDistanceKm || 0} km
             </span>
-            <span className="text-xs text-slate-400 line-through">
-              {summary.unoptimizedDistanceKm || 0} km
+            <span className="text-xs text-slate-400 line-through tabular-nums">
+              {summary.baselineDistanceKm || summary.unoptimizedDistanceKm || 0} km
             </span>
           </div>
-          <p className="text-xs text-emerald-700 font-semibold mt-2 flex items-center gap-1">
-            <TrendingDown className="w-3.5 h-3.5" />
-            <span>Saved {summary.distanceSavedKm || 0} km road transit</span>
+          <p className="text-xs text-emerald-700 mt-1 font-medium flex items-center gap-1">
+            <TrendingDown className="w-3 h-3" />
+            <span>{summary.distanceSavedKm || 0} km {t('deadheadEliminated')}</span>
           </p>
         </div>
 

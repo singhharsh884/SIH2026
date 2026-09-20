@@ -123,86 +123,51 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9f7] text-slate-800">
-      {/* Top Banner indicating mock redirect */}
-      <div className="bg-slate-900 text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span className="font-semibold">{t('liveRoute')}:</span>
-          <code className="bg-slate-950 px-2 py-0.5 rounded font-mono text-emerald-300">
-            /buyer/dashboard
-          </code>
-          <span className="hidden sm:inline text-slate-400">|</span>
-          <span className="hidden sm:inline text-emerald-300">
-            {t('activeRole')}: <strong>{t('b2bBuyerTitle')}</strong>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <LanguageToggle variant="dark" />
-          <button
-            onClick={onLogout}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors font-medium cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{t('switchUser')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-md">
-              <AgriSproutIcon className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <span className="font-extrabold text-lg text-slate-900 tracking-tight">
-                Kisan<span className="text-emerald-700">Direct</span>
-              </span>
-              <span className="ml-2 text-xs font-semibold bg-slate-100 text-slate-800 px-2 py-0.5 rounded-full">
-                {t('buyerPortalBadge')}
-              </span>
-            </div>
+    <div className="bg-[#f8faf8] text-slate-900 pb-16">
+      {/* Sub-header / Procurement Context Bar */}
+      <div className="bg-white border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-xs text-slate-500">
+            <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+              {user.businessName || 'TastyGreens Procurement Network'}
+            </span>
+            <span className="text-slate-300">/</span>
+            <span className="flex items-center gap-1 text-slate-600 font-medium">
+              <MapPin className="w-3 h-3 text-slate-400" />
+              {user.location || 'Mumbai / Thane Cluster'}
+            </span>
+            <span className="text-slate-300">/</span>
+            <span className="text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded text-[11px]">
+              {user.badge || 'Bulk Institutional Buyer (5+ Tons/week)'}
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowRouteOptimizer(!showRouteOptimizer)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                 showRouteOptimizer
-                  ? 'bg-emerald-800 text-white shadow-xs'
-                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80'
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
               }`}
             >
-              <Navigation className="w-3.5 h-3.5" />
-              <span>{t('routeOptimizerNav')}</span>
+              <Navigation className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{showRouteOptimizer ? (language === 'hi' ? 'रूट छुपाएं' : 'Hide Fleet Route') : (language === 'hi' ? 'रीफर रूट मॉनिटर' : 'Reefer Route Monitor')}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsRFQModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>{t('newWholesaleRFQBtn')}</span>
             </button>
-
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-slate-900">{user.name}</p>
-              <p className="text-xs text-slate-500 flex items-center gap-1 justify-end">
-                <Building2 className="w-3 h-3 text-emerald-700" />
-                {user.businessName || 'Procurement Hub'}
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-300 text-slate-800 font-bold flex items-center justify-center">
-              {user.name.charAt(0)}
-            </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -222,55 +187,82 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
           </div>
         )}
 
-        {/* Banner */}
-        <div className="bg-gradient-to-r from-slate-900 to-emerald-950 rounded-3xl p-6 sm:p-8 text-white shadow-lg mb-8 relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-semibold mb-3 border border-emerald-400/30">
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>{user.badge || 'Verified B2B Buyer'}</span>
+        {/* Executive Procurement Overview Card */}
+        <div className="bg-white border border-slate-200/90 rounded-xl p-5 sm:p-6 mb-6 shadow-card">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                  {user.businessName || 'TastyGreens Chain'}
+                </h1>
+                <span className="text-xs font-medium text-slate-500">
+                  • Procurement Lead: {user.name}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 max-w-2xl leading-relaxed">
+                {t('buyerBannerDesc')}
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
-              {t('buyerGreeting')}, {user.name} ({user.businessName || 'TastyGreens Chain'})
-            </h1>
-            <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-              {t('buyerBannerDesc')}
-            </p>
+
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg text-center flex-1 md:flex-initial min-w-[130px]">
+                <p className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                  {isHindi ? 'महीने की खरीद' : 'Monthly Volume'}
+                </p>
+                <p className="text-lg font-bold text-slate-900 tabular-nums">18.4 Tons</p>
+                <p className="text-[10px] text-emerald-600 font-medium">100% Cold-Chain</p>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-lg text-center flex-1 md:flex-initial min-w-[130px]">
+                <p className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                  {isHindi ? 'सक्रिय अनुबंध' : 'Active Contracts'}
+                </p>
+                <p className="text-lg font-bold text-emerald-700 tabular-nums">{rfqs.length} Live</p>
+                <p className="text-[10px] text-slate-500">Direct FPO Clusters</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* AI Cold Chain Status Banner */}
-        <div className="mb-8 p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
-              <Cpu className="w-5 h-5" />
+        {/* AI Cold Chain Status Bar */}
+        <div className="mb-6 p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200">
+              <Cpu className="w-4 h-4 text-emerald-700" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-emerald-950">
-                {t('coldChainShipmentTitle')}
-              </h2>
-              <p className="text-xs text-emerald-800/90 mt-0.5">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-bold text-emerald-950 uppercase tracking-wide">
+                  {t('coldChainShipmentTitle')}
+                </h2>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-200/60 text-emerald-900">
+                  Telemetry Active
+                </span>
+              </div>
+              <p className="text-xs text-emerald-900/90 mt-0.5">
                 {t('coldChainShipmentSub')}
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-3 text-xs font-bold text-emerald-900 bg-white px-3.5 py-2 rounded-xl border border-emerald-200 shadow-sm">
-              <span className="flex items-center gap-1">
-                <Thermometer className="w-4 h-4 text-emerald-600" /> {t('optimalText')}
-              </span>
-              <span>•</span>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-950 bg-white px-3 py-1.5 rounded-lg border border-emerald-200/80 shadow-xs">
+              <Thermometer className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="tabular-nums">4.2°C Optimal</span>
+              <span className="text-slate-300">•</span>
               <span className="text-emerald-700">{t('etaText')}</span>
             </div>
 
             <button
               type="button"
               onClick={() => setShowRouteOptimizer(!showRouteOptimizer)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer hover:scale-105"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer"
             >
               <Navigation className="w-3.5 h-3.5" />
               <span>
                 {showRouteOptimizer
-                  ? (language === 'hi' ? 'रूट छुपाएं' : 'Hide Optimizer')
+                  ? (language === 'hi' ? 'रूट छुपाएं' : 'Hide Fleet')
                   : t('openRouteOptimizerBtn')}
               </span>
             </button>
@@ -650,83 +642,83 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
                 return (
                   <div
                     key={ord._id || ord.orderId}
-                    className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-all space-y-3"
+                    className="p-4 sm:p-5 rounded-xl border border-slate-200/90 bg-white shadow-card space-y-4"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-900 font-mono">
+                          <span className="text-xs font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                             {ord.orderId || 'KD-2026-7841'}
                           </span>
-                          <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                          <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">
                             {ord.status || 'IN_TRANSIT'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Buyer: <strong>{ord.customerName}</strong> • Delivery: {ord.deliveryAddress || 'Gomti Nagar / Vashi Hub'}
+                        <p className="text-xs text-slate-500 mt-1">
+                          Buyer: <strong className="text-slate-700">{ord.customerName}</strong> • Delivery: <span className="text-slate-600">{ord.deliveryAddress || 'Gomti Nagar / Vashi Hub'}</span>
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-slate-900">
+                        <span className="text-base font-bold text-slate-900 tabular-nums">
                           ₹{grossAmount.toLocaleString('en-IN')}
                         </span>
-                        <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-mono font-bold">
+                        <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-semibold">
                           Escrow Locked
                         </span>
                       </div>
                     </div>
 
-                    {/* 4-Stage Quantity & Moisture Shrinkage Reconciliation Visual Bar (PRD Section 24) */}
+                    {/* 4-Stage Quantity & Moisture Shrinkage Reconciliation Visual Stepper (PRD Section 24) */}
                     <div>
-                      <div className="flex items-center justify-between mb-1.5 text-[11px]">
-                        <span className="font-bold text-slate-700 flex items-center gap-1">
+                      <div className="flex items-center justify-between mb-2 text-xs">
+                        <span className="font-semibold text-slate-700 flex items-center gap-1.5">
                           <Scale className="w-3.5 h-3.5 text-emerald-600" />
-                          4-Stage Weighing & Moisture Audit:
+                          <span>4-Stage Weighing & Moisture Audit Trail:</span>
                         </span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.2 rounded">
+                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
                           {recon.shrinkagePercent || 1.2}% Moisture Shrinkage • {recon.status || 'WITHIN_TOLERANCE'}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                        <div className="p-2 bg-white rounded-xl border border-slate-200">
-                          <span className="text-[10px] text-slate-400 block">1. Farmer Declared</span>
-                          <strong className="text-slate-800 text-xs font-mono">{recon.farmerDeclaredKg || 1000} kg</strong>
+                        <div className="p-2.5 bg-slate-50/80 rounded-lg border border-slate-200/80">
+                          <span className="text-[10px] font-semibold uppercase text-slate-400 block mb-0.5">1. Farmer Declared</span>
+                          <strong className="text-slate-800 text-xs font-mono tabular-nums">{recon.farmerDeclaredKg || 1000} kg</strong>
                         </div>
-                        <div className="p-2 bg-white rounded-xl border border-slate-200">
-                          <span className="text-[10px] text-slate-400 block">2. Farmgate Weighed</span>
-                          <strong className="text-slate-800 text-xs font-mono">{recon.farmgateWeighedKg || 996} kg</strong>
+                        <div className="p-2.5 bg-slate-50/80 rounded-lg border border-slate-200/80">
+                          <span className="text-[10px] font-semibold uppercase text-slate-400 block mb-0.5">2. Farmgate Weighed</span>
+                          <strong className="text-slate-800 text-xs font-mono tabular-nums">{recon.farmgateWeighedKg || 996} kg</strong>
                         </div>
-                        <div className="p-2 bg-white rounded-xl border border-slate-200">
-                          <span className="text-[10px] text-slate-400 block">3. Hub Received</span>
-                          <strong className="text-slate-800 text-xs font-mono">{recon.hubWeighedKg || 990} kg</strong>
+                        <div className="p-2.5 bg-slate-50/80 rounded-lg border border-slate-200/80">
+                          <span className="text-[10px] font-semibold uppercase text-slate-400 block mb-0.5">3. Reefer Hub Gate</span>
+                          <strong className="text-slate-800 text-xs font-mono tabular-nums">{recon.hubWeighedKg || 990} kg</strong>
                         </div>
-                        <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-200">
-                          <span className="text-[10px] text-emerald-700 block">4. Buyer Received</span>
-                          <strong className="text-emerald-900 text-xs font-mono">{recon.buyerReceivedKg || 988} kg</strong>
+                        <div className="p-2.5 bg-emerald-50/80 rounded-lg border border-emerald-200">
+                          <span className="text-[10px] font-semibold uppercase text-emerald-700 block mb-0.5">4. Buyer Delivery</span>
+                          <strong className="text-emerald-900 text-xs font-mono tabular-nums">{recon.buyerReceivedKg || 988} kg</strong>
                         </div>
                       </div>
                     </div>
 
-                    {/* Unit Economics & Farmer Payout Action (PRD Section 26 & 36) */}
-                    <div className="p-3 bg-gradient-to-r from-emerald-900 to-teal-950 text-white rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                    {/* Unit Economics & Farmer Payout Settlement Strip (PRD Section 26 & 36) */}
+                    <div className="p-3.5 bg-slate-900 text-white rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs border border-slate-800">
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-emerald-300 tracking-wide block">
-                          Transparent Unit Economics Realization (90.0%)
+                        <span className="text-[10px] uppercase font-mono tracking-wider text-emerald-400 block mb-0.5">
+                          Transparent Unit Economics (90.0% Net Farmer Realization)
                         </span>
-                        <p className="text-xs text-emerald-100 mt-0.5">
-                          Gross ₹{grossAmount.toLocaleString('en-IN')} - Logistics ₹{logistics} (8.5%) - Platform ₹{platform} (1.5%) =
-                          <strong className="text-white text-sm font-black ml-1 text-emerald-300">Net Farmer ₹{netFarmer.toLocaleString('en-IN')}</strong>
+                        <p className="text-xs text-slate-300">
+                          Gross ₹{grossAmount.toLocaleString('en-IN')} - Reefer Logistics ₹{logistics} (8.5%) - Platform ₹{platform} (1.5%) =
+                          <strong className="text-white font-bold ml-1 text-emerald-300 tabular-nums">Net Farmer ₹{netFarmer.toLocaleString('en-IN')}</strong>
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <div className="flex items-center gap-2 w-full md:w-auto justify-end shrink-0">
                         {/* Quality Dispute Button (PRD Section 27) */}
                         <button
                           type="button"
                           onClick={() => setSelectedDisputeOrder(ord)}
-                          className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
                           title="Raise Quality Dispute on this Order"
                         >
                           <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
@@ -743,10 +735,10 @@ export const BuyerDashboardPreview = ({ session, onLogout }) => {
                             setNotification(`Farmer Payout ₹${netFarmer.toLocaleString('en-IN')} settled directly to farmer bank via UPI!`);
                             setTimeout(() => setNotification(''), 5000);
                           }}
-                          className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1 shrink-0 cursor-pointer ${
+                          className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
                             isPaid
-                              ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 cursor-default'
-                              : 'bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-black hover:scale-102'
+                              ? 'bg-slate-800 text-emerald-400 border border-emerald-500/40 cursor-default'
+                              : 'bg-emerald-600 hover:bg-emerald-500 text-white font-bold'
                           }`}
                         >
                           <CheckCheck className="w-3.5 h-3.5" />
