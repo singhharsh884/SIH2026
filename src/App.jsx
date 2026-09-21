@@ -5,9 +5,6 @@ import {
   Truck,
   Store,
   Sparkles,
-  Database,
-  ArrowRight,
-  ShieldCheck,
   User,
   LogOut,
 } from 'lucide-react';
@@ -22,9 +19,10 @@ import { SihDemoWalkthroughModal } from './components/dashboards/SihDemoWalkthro
 import { authService } from './services/authService';
 import { LanguageToggle } from './components/common/LanguageToggle';
 import { useLanguage } from './context/LanguageContext';
+import { KisanChatbotWidget } from './components/common/KisanChatbotWidget';
 
 export function App() {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const isHindi = language === 'hi';
 
   // Determine initial session from persistent storage & URL pathname
@@ -80,6 +78,7 @@ export function App() {
   const [role, setRole] = useState('farmer'); // 'farmer' | 'consumer' | 'buyer'
   const [session, setSession] = useState(getInitialSession);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
   const [backendStatus, setBackendStatus] = useState({ checked: false, online: false, database: '', latency: 18 });
@@ -160,7 +159,7 @@ export function App() {
       if (typeof window !== 'undefined' && userSession.redirectUrl) {
         window.history.pushState(null, '', userSession.redirectUrl);
       }
-    } catch (err) {
+    } catch {
       setIsLoading(false);
       setApiError('Google sign in encountered an issue. Please try again.');
     }
@@ -294,7 +293,7 @@ export function App() {
           </button>
         </nav>
 
-        {/* Right: Telemetry, Language, Pitch Studio Launcher */}
+        {/* Right: Telemetry, Voice AI, Language, Pitch Studio Launcher */}
         <div className="flex items-center gap-2.5">
           {/* MongoDB Atlas Latency Indicator */}
           <div
@@ -305,6 +304,17 @@ export function App() {
             <span>Atlas Live</span>
             <span className="text-slate-500 tabular-nums">({backendStatus.latency}ms)</span>
           </div>
+
+          {/* Voice AI Launcher */}
+          <button
+            type="button"
+            onClick={() => setIsChatbotOpen(true)}
+            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-emerald-500/30 transition-all cursor-pointer"
+            title="Open Kisan AI Voice Advisor"
+          >
+            <span>🎙️</span>
+            <span>{isHindi ? 'व्यापार AI' : 'Voice AI'}</span>
+          </button>
 
           {/* Bilingual Switch */}
           <LanguageToggle variant="dark" />
@@ -367,7 +377,7 @@ export function App() {
         <button
           type="button"
           onClick={() => setIsDemoModalOpen(true)}
-          className="fixed bottom-4 right-4 z-40 bg-slate-950/95 hover:bg-slate-900 text-slate-100 px-3.5 py-2 rounded-full shadow-lg border border-slate-800 flex items-center gap-2 text-xs font-semibold backdrop-blur-md transition-all hover:scale-102 cursor-pointer group"
+          className="fixed bottom-4 left-4 z-40 bg-slate-950/95 hover:bg-slate-900 text-slate-100 px-3.5 py-2 rounded-full shadow-lg border border-slate-800 flex items-center gap-2 text-xs font-semibold backdrop-blur-md transition-all hover:scale-102 cursor-pointer group"
           title="Open Official SIH 12-Step Pitch Walkthrough (PRD Section 47)"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-ping" />
@@ -381,6 +391,9 @@ export function App() {
           isOpen={isDemoModalOpen}
           onClose={() => setIsDemoModalOpen(false)}
         />
+
+        {/* Global AI Voice & Chat Assistant */}
+        <KisanChatbotWidget isOpen={isChatbotOpen} onOpenChange={setIsChatbotOpen} />
       </div>
     );
   }
@@ -438,6 +451,7 @@ export function App() {
               onGoogleLogin={handleGoogleLogin}
               isLoading={isLoading}
               apiError={apiError}
+              onOpenChatbot={() => setIsChatbotOpen(true)}
             />
           ) : (
             <RegisterForm
@@ -459,7 +473,7 @@ export function App() {
       <button
         type="button"
         onClick={() => setIsDemoModalOpen(true)}
-        className="fixed bottom-4 right-4 z-40 bg-slate-950/95 hover:bg-slate-900 text-slate-100 px-3.5 py-2 rounded-full shadow-lg border border-slate-800 flex items-center gap-2 text-xs font-semibold backdrop-blur-md transition-all hover:scale-102 cursor-pointer group"
+        className="fixed bottom-4 left-4 z-40 bg-slate-950/95 hover:bg-slate-900 text-slate-100 px-3.5 py-2 rounded-full shadow-lg border border-slate-800 flex items-center gap-2 text-xs font-semibold backdrop-blur-md transition-all hover:scale-102 cursor-pointer group"
         title="Open Official SIH 12-Step Pitch Walkthrough (PRD Section 47)"
       >
         <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-ping" />
@@ -473,9 +487,11 @@ export function App() {
         isOpen={isDemoModalOpen}
         onClose={() => setIsDemoModalOpen(false)}
       />
+
+      {/* Global AI Voice & Chat Assistant for Unauthenticated Users */}
+      <KisanChatbotWidget isOpen={isChatbotOpen} onOpenChange={setIsChatbotOpen} />
     </div>
   );
 }
 
 export default App;
-

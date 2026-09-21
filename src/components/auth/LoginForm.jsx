@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Smartphone, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Smartphone, AlertCircle, CheckCircle2, Mic, Sparkles } from 'lucide-react';
 import { RoleSelector } from './RoleSelector';
 import { AuthInput } from '../common/AuthInput';
 import { PasswordInput } from '../common/PasswordInput';
@@ -19,8 +19,10 @@ export const LoginForm = ({
   onGoogleLogin,
   isLoading = false,
   apiError = '',
+  onOpenChatbot,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isHindi = language === 'hi';
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -95,6 +97,38 @@ export const LoginForm = ({
 
         {/* Card level Language Toggle */}
         <LanguageToggle variant="default" className="shrink-0" />
+      </div>
+
+      {/* Voice Assistant / Kisan Sahayak Callout Banner on Login Page */}
+      <div className="mb-5 p-3 sm:p-3.5 bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 rounded-2xl text-white shadow-md border border-emerald-500/30 flex items-center justify-between gap-3 relative overflow-hidden group">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 flex items-center justify-center shrink-0 shadow-md relative group-hover:scale-105 transition-transform">
+            <Mic className="w-5 h-5 animate-pulse text-slate-950" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-emerald-950" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-black text-white">
+                {isHindi ? 'बोलकर पूछें मंच कैसे काम करता है?' : 'Ask by Voice: How KisanDirect Works?'}
+              </span>
+              <span className="bg-emerald-400/25 text-emerald-300 text-[10px] font-extrabold px-1.5 py-0.2 rounded-full border border-emerald-400/40">
+                🎙️ Voice AI
+              </span>
+            </div>
+            <p className="text-[11px] text-emerald-200/90 truncate mt-0.5">
+              {isHindi ? 'लिखना नहीं आता? माइक दबाकर हिंदी या इंग्लिश में पूछें' : 'Cannot write? Tap mic to ask in Hindi or English'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onOpenChatbot && onOpenChatbot()}
+          className="shrink-0 px-3 py-1.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1"
+        >
+          <span>{isHindi ? 'पूछें' : 'Ask'}</span>
+          <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
+        </button>
       </div>
 
       {/* Role Selector */}
