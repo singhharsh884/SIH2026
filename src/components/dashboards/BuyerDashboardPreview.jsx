@@ -40,6 +40,7 @@ import { cropService } from '../../services/cropService';
 
 export const BuyerDashboardPreview = ({ session, onLogout }) => {
   const { t, language } = useLanguage();
+  const isHindi = language === 'hi';
 
   const user = session?.user || {
     name: 'Rajiv Mehra',
