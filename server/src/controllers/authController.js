@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { UserModel, memoryStore } from '../models/User.js';
 import { isConnectedToMongo } from '../config/db.js';

@@ -13,10 +13,10 @@ export const GoogleAuthModal = ({ isOpen, onClose, onSelectAccount, selectedRole
   const defaultAccounts = [
     {
       id: 'acc_1',
-      name: 'Shreyash Singh',
-      email: 'shreyash.singh2026@gmail.com',
+      name: 'Gaurav',
+      email: 'gy60540@gmail.com',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-      tag: 'Primary Google Account',
+      tag: 'Verified User Account',
     },
     {
       id: 'acc_2',

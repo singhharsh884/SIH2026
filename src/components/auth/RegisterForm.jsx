@@ -67,6 +67,53 @@ export const RegisterForm = ({
     }
   };
 
+  const handleQuickFillSample = () => {
+    if (role === 'buyer') {
+      setFormData({
+        name: 'Gaurav',
+        contactPerson: 'Gaurav',
+        mobile: '9876599999',
+        email: 'gy60540@gmail.com',
+        password: 'password123',
+        confirmPassword: 'password123',
+        businessName: 'Gaurav Agri Wholesale & Retail',
+        businessType: 'Restaurant / Hotel Chain',
+        location: 'Lucknow, Uttar Pradesh',
+        farmName: '',
+        deliveryLocation: '',
+      });
+    } else if (role === 'farmer') {
+      setFormData({
+        name: 'Rameshwar Patel',
+        contactPerson: 'Rameshwar Patel',
+        mobile: '9876543210',
+        email: 'farmer@kisandirect.in',
+        password: 'farmer@123',
+        confirmPassword: 'farmer@123',
+        farmName: 'Krishi Vikas Organic FPO',
+        location: 'Nashik, Maharashtra',
+        businessName: '',
+        businessType: '',
+        deliveryLocation: '',
+      });
+    } else {
+      setFormData({
+        name: 'Ananya Sharma',
+        contactPerson: '',
+        mobile: '9811223344',
+        email: 'ananya.sharma@gmail.com',
+        password: 'fresh@123',
+        confirmPassword: 'fresh@123',
+        deliveryLocation: 'Indiranagar, Bengaluru - 560038',
+        farmName: '',
+        location: '',
+        businessName: '',
+        businessType: '',
+      });
+    }
+    setErrors({});
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -115,8 +162,8 @@ export const RegisterForm = ({
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long';
     }
 
     if (!agreeTerms) {
@@ -162,7 +209,20 @@ export const RegisterForm = ({
       </div>
 
       {/* Role Selection for Registration */}
-      <div className="mb-5">
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            {t('registerAs') || 'Register As'}
+          </span>
+          <button
+            type="button"
+            onClick={handleQuickFillSample}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+          >
+            <span>✨</span>
+            <span>{language === 'hi' ? 'नमूना डेटा भरें' : 'Fill Sample Credentials'}</span>
+          </button>
+        </div>
         <RoleSelector
           selectedRole={role}
           onSelectRole={(newRole) => {
