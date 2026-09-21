@@ -25,22 +25,76 @@ export function App() {
   const { language } = useLanguage();
   const isHindi = language === 'hi';
 
+  // Determine initial session from persistent storage & URL pathname
+  const getInitialSession = () => {
+    const existing = authService.getSession();
+    const pathname = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
+
+    if (pathname.includes('/buyer')) {
+      const s = (existing?.role === 'buyer' && existing) || {
+        user: existing?.user || { name: 'Gaurav', email: 'gy60540@gmail.com', businessName: 'Gaurav Agri Wholesale', location: 'Lucknow, UP', badge: 'Verified Bulk Institutional Buyer' },
+        role: 'buyer',
+        redirectUrl: '/buyer/dashboard',
+        source: 'URL Direct Navigation',
+      };
+      authService.saveSession(s);
+      return s;
+    }
+    if (pathname.includes('/farmer') || pathname.includes('/fpo')) {
+      const s = (existing?.role === 'farmer' && existing) || {
+        user: existing?.user || { name: 'Rameshwar Patel', businessName: 'Krishi Vikas Organic FPO', location: 'Nashik, MH', badge: 'Verified FPO Leader (45+ Farmers)' },
+        role: 'farmer',
+        redirectUrl: '/farmer/dashboard',
+        source: 'URL Direct Navigation',
+      };
+      authService.saveSession(s);
+      return s;
+    }
+    if (pathname.includes('/logistics') || pathname.includes('/routes')) {
+      const s = {
+        user: existing?.user || { name: 'Logistics Fleet Controller', businessName: 'KisanDirect Cold Fleet', location: 'Navi Mumbai Reefer Hub', badge: 'AI Fleet Manager' },
+        role: 'logistics',
+        redirectUrl: '/logistics/routes',
+        source: 'URL Direct Navigation',
+      };
+      authService.saveSession(s);
+      return s;
+    }
+    if (pathname.includes('/marketplace') || pathname.includes('/consumer')) {
+      const s = (existing?.role === 'consumer' && existing) || {
+        user: existing?.user || { name: 'Ananya Sharma', location: 'Bengaluru, KA', badge: 'Verified Direct Consumer' },
+        role: 'consumer',
+        redirectUrl: '/marketplace',
+        source: 'URL Direct Navigation',
+      };
+      authService.saveSession(s);
+      return s;
+    }
+
+    return existing;
+  };
+
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [role, setRole] = useState('farmer'); // 'farmer' | 'consumer' | 'buyer'
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState(getInitialSession);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
   const [backendStatus, setBackendStatus] = useState({ checked: false, online: false, database: '', latency: 18 });
 
-  // Check stored session and backend health on mount
+  // Listen to browser navigation (back/forward)
   useEffect(() => {
-    const existing = authService.getSession();
-    if (existing) {
-      setSession(existing);
-    }
+    const handlePopState = () => {
+      const updated = getInitialSession();
+      setSession(updated);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
+  // Check backend health on mount
+  useEffect(() => {
     const startPing = performance.now();
     authService.checkBackendHealth().then((res) => {
       const pingMs = Math.round(performance.now() - startPing);
@@ -59,10 +113,12 @@ export function App() {
     setApiError('');
     try {
       const userSession = await authService.login(credentials);
-      setTimeout(() => {
-        setSession(userSession);
-        setIsLoading(false);
-      }, 350);
+      authService.saveSession(userSession);
+      setSession(userSession);
+      setIsLoading(false);
+      if (typeof window !== 'undefined' && userSession.redirectUrl) {
+        window.history.pushState(null, '', userSession.redirectUrl);
+      }
       return userSession;
     } catch (err) {
       setIsLoading(false);
@@ -77,10 +133,12 @@ export function App() {
     setApiError('');
     try {
       const userSession = await authService.register(userData);
-      setTimeout(() => {
-        setSession(userSession);
-        setIsLoading(false);
-      }, 350);
+      authService.saveSession(userSession);
+      setSession(userSession);
+      setIsLoading(false);
+      if (typeof window !== 'undefined' && userSession.redirectUrl) {
+        window.history.pushState(null, '', userSession.redirectUrl);
+      }
       return userSession;
     } catch (err) {
       setIsLoading(false);
@@ -95,8 +153,12 @@ export function App() {
     setApiError('');
     try {
       const userSession = await authService.loginWithGoogle(role, googleAccount);
+      authService.saveSession(userSession);
       setSession(userSession);
       setIsLoading(false);
+      if (typeof window !== 'undefined' && userSession.redirectUrl) {
+        window.history.pushState(null, '', userSession.redirectUrl);
+      }
     } catch {
       setIsLoading(false);
       setApiError('Google sign in encountered an issue. Please try again.');
@@ -108,38 +170,50 @@ export function App() {
     authService.logout();
     setSession(null);
     setApiError('');
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/');
+    }
   };
 
-  // Quick switch role preset
+  // Quick switch role preset with persistent session and URL updates
   const switchToRole = (targetRole) => {
+    let newSession = null;
     if (targetRole === 'farmer') {
       setRole('farmer');
-      setSession({
-        user: { name: 'Rameshwar Patel', businessName: 'Krishi Vikas Organic FPO', location: 'Nashik, MH', badge: 'Verified FPO Leader (45+ Farmers)' },
+      newSession = {
+        user: (session?.role === 'farmer' && session.user) || { name: 'Rameshwar Patel', businessName: 'Krishi Vikas Organic FPO', location: 'Nashik, MH', badge: 'Verified FPO Leader (45+ Farmers)' },
         role: 'farmer',
         redirectUrl: '/farmer/dashboard',
-      });
+      };
     } else if (targetRole === 'buyer') {
       setRole('buyer');
-      setSession({
-        user: { name: 'Rajiv Mehra', businessName: 'TastyGreens Chain', location: 'Mumbai, MH', badge: 'Verified Institutional Buyer' },
+      newSession = {
+        user: (session?.role === 'buyer' && session.user) || { name: 'Gaurav', email: 'gy60540@gmail.com', businessName: 'Gaurav Agri Wholesale', location: 'Lucknow, UP', badge: 'Verified Bulk Institutional Buyer' },
         role: 'buyer',
         redirectUrl: '/buyer/dashboard',
-      });
+      };
     } else if (targetRole === 'logistics') {
       setRole('buyer');
-      setSession({
+      newSession = {
         user: { name: 'Logistics Fleet Controller', businessName: 'KisanDirect Cold Fleet', location: 'Navi Mumbai Reefer Hub', badge: 'AI Fleet Manager' },
         role: 'logistics',
         redirectUrl: '/logistics/routes',
-      });
+      };
     } else if (targetRole === 'consumer') {
       setRole('consumer');
-      setSession({
-        user: { name: 'Ananya Sharma', location: 'Bengaluru, KA', badge: 'Verified Direct Consumer' },
+      newSession = {
+        user: (session?.role === 'consumer' && session.user) || { name: 'Ananya Sharma', location: 'Bengaluru, KA', badge: 'Verified Direct Consumer' },
         role: 'consumer',
         redirectUrl: '/marketplace',
-      });
+      };
+    }
+
+    if (newSession) {
+      authService.saveSession(newSession);
+      setSession(newSession);
+      if (typeof window !== 'undefined') {
+        window.history.pushState(null, '', newSession.redirectUrl);
+      }
     }
   };
 

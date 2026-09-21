@@ -107,12 +107,7 @@ export const authService = {
         source: 'Live Express + MongoDB API',
       };
 
-      if (rememberMe) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-      } else {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-      }
-
+      this.saveSession(sessionData);
       return sessionData;
     } catch (networkError) {
       // If network fails (e.g. backend offline), check if error is API error or network TypeError
@@ -153,7 +148,7 @@ export const authService = {
         source: 'Live Express + MongoDB API',
       };
 
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+      this.saveSession(sessionData);
       return sessionData;
     } catch (networkError) {
       if (networkError.message && !networkError.message.includes('fetch') && !networkError.message.includes('Failed to fetch')) {
@@ -171,8 +166,8 @@ export const authService = {
   async loginWithGoogle(role, customAccount = null) {
     await new Promise((resolve) => setTimeout(resolve, 400));
 
-    const name = customAccount?.name || 'Shreyash Singh';
-    const email = customAccount?.email || 'shreyash.singh2026@gmail.com';
+    const name = customAccount?.name || 'Gaurav';
+    const email = customAccount?.email || 'gy60540@gmail.com';
     const targetRole = customAccount?.role || role || 'farmer';
 
     const sessionData = {
@@ -181,8 +176,8 @@ export const authService = {
         name,
         email,
         role: targetRole,
-        businessName: targetRole === 'buyer' ? 'TastyGreens Chain' : 'Krishi Vikas Organic FPO',
-        location: targetRole === 'consumer' ? 'Bengaluru, KA' : 'Nashik, Maharashtra',
+        businessName: targetRole === 'buyer' ? 'Gaurav Agri Wholesale' : 'Krishi Vikas Organic FPO',
+        location: targetRole === 'consumer' ? 'Bengaluru, KA' : 'Lucknow, UP',
         badge: 'Google Verified ' + (targetRole === 'farmer' ? 'FPO Partner' : targetRole === 'buyer' ? 'Bulk Buyer' : 'Consumer'),
       },
       role: targetRole,
@@ -191,16 +186,28 @@ export const authService = {
       source: 'Google OAuth 2.0 (Verified)',
     };
 
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+    this.saveSession(sessionData);
     return sessionData;
+  },
+
+  /**
+   * Save session persistently across reloads
+   */
+  saveSession(sessionData) {
+    if (!sessionData) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+    } catch (e) {
+      console.warn('Storage save error:', e);
+    }
   },
 
   /**
    * Get current stored session
    */
   getSession() {
-    const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     try {
       return JSON.parse(raw);
