@@ -9,15 +9,18 @@ import { RouteOptimizerPreview } from './components/dashboards/RouteOptimizerPre
 import { authService } from './services/authService';
 import { LanguageToggle } from './components/common/LanguageToggle';
 import { useLanguage } from './context/LanguageContext';
+import { KisanChatbotWidget } from './components/common/KisanChatbotWidget';
 
 export function App() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isHindi = language === 'hi';
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [role, setRole] = useState('farmer'); // 'farmer' | 'consumer' | 'buyer'
   const [session, setSession] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
   const [backendStatus, setBackendStatus] = useState({ checked: false, online: false, database: '' });
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   // Check stored session and backend health on mount
   useEffect(() => {
@@ -95,17 +98,15 @@ export function App() {
 
   // If user is authenticated, route to corresponding role dashboard view
   if (session) {
+    let activeDashboard = null;
     if (session.redirectUrl === '/farmer/dashboard' || session.role === 'farmer') {
-      return <FarmerDashboardPreview session={session} onLogout={handleLogout} />;
-    }
-    if (session.redirectUrl === '/marketplace' || session.role === 'consumer') {
-      return <MarketplacePreview session={session} onLogout={handleLogout} />;
-    }
-    if (session.redirectUrl === '/buyer/dashboard' || session.role === 'buyer') {
-      return <BuyerDashboardPreview session={session} onLogout={handleLogout} />;
-    }
-    if (session.redirectUrl === '/logistics/routes' || session.role === 'logistics') {
-      return (
+      activeDashboard = <FarmerDashboardPreview session={session} onLogout={handleLogout} />;
+    } else if (session.redirectUrl === '/marketplace' || session.role === 'consumer') {
+      activeDashboard = <MarketplacePreview session={session} onLogout={handleLogout} />;
+    } else if (session.redirectUrl === '/buyer/dashboard' || session.role === 'buyer') {
+      activeDashboard = <BuyerDashboardPreview session={session} onLogout={handleLogout} />;
+    } else if (session.redirectUrl === '/logistics/routes' || session.role === 'logistics') {
+      activeDashboard = (
         <RouteOptimizerPreview
           session={session}
           onLogout={handleLogout}
@@ -119,6 +120,12 @@ export function App() {
         />
       );
     }
+    return (
+      <>
+        {activeDashboard}
+        <KisanChatbotWidget isOpen={isChatbotOpen} onOpenChange={setIsChatbotOpen} />
+      </>
+    );
   }
 
   return (
@@ -210,6 +217,15 @@ export function App() {
             <span>🚚</span>
             <span>{t('routeOptimizerNav')}</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setIsChatbotOpen(true)}
+            className="text-[11px] bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-black px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 shadow-sm border border-emerald-300"
+          >
+            <span>🎙️</span>
+            <span>{isHindi ? 'किसान सहायक (Voice AI)' : 'Kisan AI (Voice)'}</span>
+          </button>
         </div>
       </div>
 
@@ -226,6 +242,7 @@ export function App() {
             onGoogleLogin={handleGoogleLogin}
             isLoading={isLoading}
             apiError={apiError}
+            onOpenChatbot={() => setIsChatbotOpen(true)}
           />
         ) : (
           <RegisterForm
@@ -241,6 +258,9 @@ export function App() {
           />
         )}
       </AuthLayout>
+
+      {/* Global AI Voice & Chat Assistant for Unauthenticated Users */}
+      <KisanChatbotWidget isOpen={isChatbotOpen} onOpenChange={setIsChatbotOpen} />
     </div>
   );
 }
