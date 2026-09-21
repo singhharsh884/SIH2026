@@ -409,69 +409,71 @@ export function App() {
       <EnterpriseHeader />
 
       <div className="flex-1 flex flex-col justify-center">
-        <AuthLayout mode={mode}>
-          {/* Top Auth Mode Tabs: Sign In vs Sign Up */}
-          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl mb-6 text-xs font-bold border border-slate-200/80">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login');
-                setApiError('');
-              }}
-              className={`py-2 px-3 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 ${
-                mode === 'login'
-                  ? 'bg-white text-emerald-800 shadow-xs font-bold ring-1 ring-slate-200/80'
-                  : 'text-slate-500 hover:text-slate-900 font-medium'
-              }`}
-            >
-              <span>🔑</span>
-              <span>{isHindi ? 'लॉगिन करें (Sign In)' : 'Sign In (Login)'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('register');
-                setApiError('');
-              }}
-              className={`py-2 px-3 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 ${
-                mode === 'register'
-                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
-                  : 'text-slate-500 hover:text-slate-900 font-medium'
-              }`}
-            >
-              <span>✨</span>
-              <span>{isHindi ? 'साइन अप (Sign Up)' : 'Create Account (Sign Up)'}</span>
-            </button>
-          </div>
+        <ErrorBoundary fallbackTitle="Authentication form error">
+          <AuthLayout mode={mode}>
+            {/* Top Auth Mode Tabs: Sign In vs Sign Up */}
+            <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl mb-6 text-xs font-bold border border-slate-200/80">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setApiError('');
+                }}
+                className={`py-2 px-3 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                  mode === 'login'
+                    ? 'bg-white text-emerald-800 shadow-xs font-bold ring-1 ring-slate-200/80'
+                    : 'text-slate-500 hover:text-slate-900 font-medium'
+                }`}
+              >
+                <span>🔑</span>
+                <span>{isHindi ? 'लॉगिन करें (Sign In)' : 'Sign In (Login)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('register');
+                  setApiError('');
+                }}
+                className={`py-2 px-3 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                  mode === 'register'
+                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                    : 'text-slate-500 hover:text-slate-900 font-medium'
+                }`}
+              >
+                <span>✨</span>
+                <span>{isHindi ? 'साइन अप (Sign Up)' : 'Create Account (Sign Up)'}</span>
+              </button>
+            </div>
 
-          {mode === 'login' ? (
-            <LoginForm
-              role={role}
-              onRoleChange={setRole}
-              onLogin={handleLogin}
-              onSwitchToRegister={() => {
-                setMode('register');
-                setApiError('');
-              }}
-              onGoogleLogin={handleGoogleLogin}
-              isLoading={isLoading}
-              apiError={apiError}
-              onOpenChatbot={() => setIsChatbotOpen(true)}
-            />
-          ) : (
-            <RegisterForm
-              role={role}
-              onRoleChange={setRole}
-              onRegister={handleRegister}
-              onSwitchToLogin={() => {
-                setMode('login');
-                setApiError('');
-              }}
-              isLoading={isLoading}
-              apiError={apiError}
-            />
-          )}
-        </AuthLayout>
+            {mode === 'login' ? (
+              <LoginForm
+                role={role}
+                onRoleChange={setRole}
+                onLogin={handleLogin}
+                onSwitchToRegister={() => {
+                  setMode('register');
+                  setApiError('');
+                }}
+                onGoogleLogin={handleGoogleLogin}
+                isLoading={isLoading}
+                apiError={apiError}
+                onOpenChatbot={() => setIsChatbotOpen(true)}
+              />
+            ) : (
+              <RegisterForm
+                role={role}
+                onRoleChange={setRole}
+                onRegister={handleRegister}
+                onSwitchToLogin={() => {
+                  setMode('login');
+                  setApiError('');
+                }}
+                isLoading={isLoading}
+                apiError={apiError}
+              />
+            )}
+          </AuthLayout>
+        </ErrorBoundary>
       </div>
 
       {/* Refined Docked Pitch Studio Trigger */}

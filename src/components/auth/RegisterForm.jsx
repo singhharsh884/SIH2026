@@ -35,7 +35,8 @@ export const RegisterForm = ({
   isLoading = false,
   apiError = '',
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isHindi = language === 'hi';
 
   // Shared & role-specific fields
   const [formData, setFormData] = useState({
