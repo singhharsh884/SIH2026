@@ -90,11 +90,11 @@ export function App() {
   };
 
   // Handle Google Social Login
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (googleAccount = null) => {
     setIsLoading(true);
     setApiError('');
     try {
-      const userSession = await authService.loginWithGoogle(role);
+      const userSession = await authService.loginWithGoogle(role, googleAccount);
       setSession(userSession);
       setIsLoading(false);
     } catch {
@@ -331,6 +331,40 @@ export function App() {
 
       <div className="flex-1 flex flex-col justify-center">
         <AuthLayout mode={mode}>
+          {/* Top Auth Mode Tabs: Sign In vs Sign Up */}
+          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl mb-6 text-xs font-bold border border-slate-200/80">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login');
+                setApiError('');
+              }}
+              className={`py-2 px-3 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                mode === 'login'
+                  ? 'bg-white text-emerald-800 shadow-xs font-bold ring-1 ring-slate-200/80'
+                  : 'text-slate-500 hover:text-slate-900 font-medium'
+              }`}
+            >
+              <span>🔑</span>
+              <span>{isHindi ? 'लॉगिन करें (Sign In)' : 'Sign In (Login)'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('register');
+                setApiError('');
+              }}
+              className={`py-2 px-3 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 ${
+                mode === 'register'
+                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-900 font-medium'
+              }`}
+            >
+              <span>✨</span>
+              <span>{isHindi ? 'साइन अप (Sign Up)' : 'Create Account (Sign Up)'}</span>
+            </button>
+          </div>
+
           {mode === 'login' ? (
             <LoginForm
               role={role}

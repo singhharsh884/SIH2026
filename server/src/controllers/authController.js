@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { UserModel, memoryStore } from '../models/User.js';
 import { isConnectedToMongo } from '../config/db.js';
@@ -80,8 +81,13 @@ export const register = async (req, res, next) => {
     }
 
     let existingUser;
-    if (isConnectedToMongo) {
-      existingUser = await UserModel.findOne(query);
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        existingUser = await UserModel.findOne(query);
+      } catch (dbErr) {
+        existingUser = await memoryStore.findOne(query);
+      }
     } else {
       existingUser = await memoryStore.findOne(query);
     }
@@ -115,8 +121,12 @@ export const register = async (req, res, next) => {
     };
 
     let newUser;
-    if (isConnectedToMongo) {
-      newUser = await UserModel.create(userPayload);
+    if (hasLiveMongo) {
+      try {
+        newUser = await UserModel.create(userPayload);
+      } catch (dbErr) {
+        newUser = await memoryStore.create(userPayload);
+      }
     } else {
       newUser = await memoryStore.create(userPayload);
     }
@@ -171,8 +181,14 @@ export const login = async (req, res, next) => {
       : { mobile: cleanMobile };
 
     let user;
-    if (isConnectedToMongo) {
-      user = await UserModel.findOne(query);
+    const hasLiveMongo = isConnectedToMongo && mongoose.connection.readyState === 1;
+    if (hasLiveMongo) {
+      try {
+        user = await UserModel.findOne(query);
+      } catch (dbErr) {
+        console.warn('UserModel findOne error, falling back to memoryStore:', dbErr.message);
+        user = await memoryStore.findOne(query);
+      }
     } else {
       user = await memoryStore.findOne(query);
     }

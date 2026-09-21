@@ -250,7 +250,7 @@ export const LoginForm = ({
       </form>
 
       {/* Social Login with Google */}
-      <SocialLogin onGoogleLogin={onGoogleLogin} loading={isLoading} />
+      <SocialLogin onGoogleLogin={onGoogleLogin} role={role} loading={isLoading} />
 
       {/* Switch to Registration */}
       <div className="mt-6 text-center text-xs text-slate-600">

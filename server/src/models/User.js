@@ -131,53 +131,49 @@ export const UserModel = mongoose.model('User', UserSchema);
 class MemoryUserStore {
   constructor() {
     this.users = [];
-    this.seedDemoUsers();
+    this.seedDemoUsersSync();
   }
 
-  async seedDemoUsers() {
-    const salt = await bcrypt.genSalt(10);
-    const farmerPass = await bcrypt.hash('farmer@123', salt);
-    const consumerPass = await bcrypt.hash('fresh@123', salt);
-    const buyerPass = await bcrypt.hash('buyer@123', salt);
+  seedDemoUsersSync() {
+    const makeUser = (id, role, name, mobile, email, plainPass, extra = {}) => {
+      const hashedPassword = bcrypt.hashSync(plainPass, 10);
+      return {
+        _id: id,
+        role,
+        name,
+        mobile,
+        email,
+        password: hashedPassword,
+        createdAt: new Date(),
+        ...extra,
+        comparePassword: async function (candidatePassword) {
+          return bcrypt.compare(candidatePassword, this.password);
+        },
+        toJSON: function () {
+          const copy = { ...this };
+          delete copy.password;
+          return copy;
+        },
+      };
+    };
 
     this.users = [
-      {
-        _id: 'usr_demo_farmer',
-        role: 'farmer',
-        name: 'Rameshwar Patel',
-        mobile: '9876543210',
-        email: 'farmer@kisandirect.in',
-        password: farmerPass,
+      makeUser('usr_demo_farmer', 'farmer', 'Rameshwar Patel', '9876543210', 'farmer@kisandirect.in', 'farmer@123', {
         farmName: 'Krishi Vikas Organic FPO, Nashik',
         location: 'Nashik, Maharashtra',
         badge: 'Verified Organic FPO (45+ member farmers)',
-        createdAt: new Date(),
-      },
-      {
-        _id: 'usr_demo_consumer',
-        role: 'consumer',
-        name: 'Ananya Sharma',
-        mobile: '9811223344',
-        email: 'ananya.sharma@gmail.com',
-        password: consumerPass,
+      }),
+      makeUser('usr_demo_consumer', 'consumer', 'Ananya Sharma', '9811223344', 'ananya.sharma@gmail.com', 'fresh@123', {
         deliveryLocation: 'Indiranagar, Bengaluru - 560038',
         badge: 'Premium Household Buyer',
-        createdAt: new Date(),
-      },
-      {
-        _id: 'usr_demo_buyer',
-        role: 'buyer',
+      }),
+      makeUser('usr_demo_buyer', 'buyer', 'Rajiv Mehra', '9988776655', 'procurement@tastygreens.com', 'buyer@123', {
         businessName: 'TastyGreens Restaurant Chain & Retail',
         contactPerson: 'Rajiv Mehra',
-        name: 'Rajiv Mehra',
-        mobile: '9988776655',
-        email: 'procurement@tastygreens.com',
-        password: buyerPass,
         businessType: 'Restaurant / Hotel Chain',
         location: 'Mumbai Central, Maharashtra',
         badge: 'Bulk Institutional Buyer (5+ Tons/week)',
-        createdAt: new Date(),
-      },
+      }),
     ];
   }
 
