@@ -21,9 +21,11 @@ import {
   Layers,
   Building2,
   Calendar,
-  Cpu,
+  AlertOctagon,
+  BellRing,
 } from 'lucide-react';
 import { logisticsService, FALLBACK_HUBS, FALLBACK_FARMS, FALLBACK_VEHICLES } from '../../services/logisticsService';
+import { orderService } from '../../services/orderService';
 import { useLanguage } from '../../context/LanguageContext';
 import { DynamicMap } from '../common/DynamicMap';
 
@@ -43,10 +45,42 @@ export const RouteOptimizer = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [routeSolution, setRouteSolution] = useState(null);
   const [viewMode, setViewMode] = useState('map'); // 'map' | 'sequence'
+  const [cancellationNotice, setCancellationNotice] = useState(null);
 
   // Simulation state
   const [isSimulating, setIsSimulating] = useState(false);
   const [activeLegIndex, setActiveLegIndex] = useState(0);
+
+  // Cold-chain IoT Telemetry & Breach Simulator state (PRD Section 20)
+  const [isBreached, setIsBreached] = useState(false);
+  const [simulatedTemp, setSimulatedTemp] = useState(3.6);
+  const [isTogglingBreach, setIsTogglingBreach] = useState(false);
+
+  const handleToggleBreach = async () => {
+    setIsTogglingBreach(true);
+    const nextBreach = !isBreached;
+    const temp = nextBreach ? 8.6 : 3.6;
+    setIsBreached(nextBreach);
+    setSimulatedTemp(temp);
+    await orderService.simulateBreach(temp, !nextBreach);
+    setIsTogglingBreach(false);
+  };
+
+  const handleSimulateCancellation = async () => {
+    if (selectedFarmIds.length <= 1) return;
+    const farmToCancel = selectedFarmIds[1] || selectedFarmIds[0];
+    setIsOptimizing(true);
+    const replanned = await logisticsService.replanRoute({
+      farmStopIds: selectedFarmIds,
+      cancelledFarmId: farmToCancel,
+      destinationHubId: selectedHubId,
+      vehicleId: selectedVehicleId,
+    });
+    setSelectedFarmIds((prev) => prev.filter((id) => id !== farmToCancel));
+    setRouteSolution(replanned);
+    setCancellationNotice(replanned.replanNotice);
+    setIsOptimizing(false);
+  };
 
   // Load logistics data on mount
   useEffect(() => {
@@ -286,13 +320,26 @@ export const RouteOptimizer = () => {
             })}
           </div>
 
-          {/* Optimize CTA Button */}
-          <div className="mt-5 flex justify-end">
+          {/* Action Buttons */}
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            {selectedFarmIds.length > 1 && (
+              <button
+                type="button"
+                onClick={handleSimulateCancellation}
+                disabled={isOptimizing}
+                className="px-4 py-2.5 rounded-2xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Simulate a farmer cancelling pickup to test dynamic re-planning (PRD Section 30)"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span>{isHindi ? 'पिकअप रद्द सिमुलेशन (Re-plan)' : 'Simulate Farmer Cancellation & Re-plan'}</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={runOptimization}
               disabled={isOptimizing}
-              className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-2xl font-extrabold text-sm shadow-md shadow-emerald-700/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-2xl font-extrabold text-sm shadow-md shadow-emerald-700/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 ml-auto"
             >
               {isOptimizing ? (
                 <>
@@ -310,29 +357,180 @@ export const RouteOptimizer = () => {
         </div>
       </div>
 
+      {/* Cancellation Event Notification Banner */}
+      {cancellationNotice && (
+        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-400 text-amber-900 text-xs font-semibold flex items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>{cancellationNotice.event}:</strong> {cancellationNotice.message}
+            </span>
+          </div>
+          <button
+            onClick={() => setCancellationNotice(null)}
+            className="text-amber-700 hover:text-amber-950 font-bold text-xs cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* PRD v2.0.0 Section 15, 16, 18: Feasibility Engine & Routing Provider Banner */}
+      <div className={`p-5 rounded-3xl border shadow-sm ${
+        routeSolution?.feasibility?.status === 'NOT_FEASIBLE'
+          ? 'bg-red-50/90 border-red-200 text-red-900'
+          : 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5">
+            <span className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${
+              routeSolution?.feasibility?.status === 'NOT_FEASIBLE'
+                ? 'bg-red-600 text-white shadow-sm'
+                : 'bg-emerald-600 text-white shadow-sm'
+            }`}>
+              {routeSolution?.feasibility?.status === 'NOT_FEASIBLE' ? (
+                <>
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>ROUTE STATUS: NOT FEASIBLE</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>ROUTE STATUS: FEASIBLE</span>
+                </>
+              )}
+            </span>
+            <span className="text-xs font-semibold text-slate-600">PRD v2.0.0 Feasibility Verification</span>
+          </div>
+
+          <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-slate-900 text-emerald-300 border border-emerald-500/30 font-bold">
+            🗺️ {routeSolution?.routingEngine?.provider || 'OSRM Road Network Engine'}
+          </span>
+        </div>
+
+        {/* Feasibility Checklist Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2 border-t border-slate-200/60">
+          {routeSolution?.feasibility?.checklist?.map((item, idx) => (
+            <div key={idx} className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80 text-xs">
+              <div className="flex items-center gap-1.5 font-bold mb-0.5">
+                <span className={item.passed ? 'text-emerald-600' : 'text-red-600'}>
+                  {item.passed ? '✓' : '✗'}
+                </span>
+                <span className="text-slate-900">{item.criterion}</span>
+              </div>
+              <p className="text-[11px] text-slate-500 line-clamp-2">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Split Recommendation if Overloaded */}
+        {routeSolution?.feasibility?.splitRecommendation && (
+          <div className="mt-3 p-3 bg-red-100/90 rounded-2xl border border-red-300 text-xs text-red-950 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-700 shrink-0 mt-0.5" />
+            <div>
+              <strong>{isHindi ? 'सिफारिश (Split Route):' : 'Engine Recommendation (Split Route):'} </strong>
+              <span>{routeSolution.feasibility.splitRecommendation.explanation}</span>
+              <div className="mt-1 flex flex-wrap gap-2 font-bold text-red-900">
+                {routeSolution.feasibility.splitRecommendation.recommendedVehicles.map((v, i) => (
+                  <span key={i} className="bg-white/80 px-2 py-0.5 rounded border border-red-300 text-[11px]">
+                    🚚 {v.vehicle}: {v.allocatedTons}T
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* IoT Reefer Telemetry & Temperature Breach Mission-Control Card (PRD Section 20 & 21) */}
+      <div
+        className={`p-4 rounded-xl border transition-all duration-300 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-card ${
+          isBreached
+            ? 'bg-rose-950 border-rose-800 text-rose-100 ring-1 ring-rose-600/50'
+            : 'bg-slate-950 border-slate-800 text-white'
+        }`}
+      >
+        <div className="flex items-start sm:items-center gap-3.5 flex-1">
+          <div
+            className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${
+              isBreached ? 'bg-rose-600 text-white' : 'bg-slate-900 text-emerald-400 border border-slate-800'
+            }`}
+          >
+            {isBreached ? <AlertOctagon className="w-5 h-5 text-white" /> : <Thermometer className="w-5 h-5" />}
+          </div>
+
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`text-[10px] font-mono uppercase font-bold tracking-wider px-2 py-0.5 rounded ${
+                  isBreached ? 'bg-rose-800 text-white border border-rose-600' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                }`}
+              >
+                {isBreached ? 'CRITICAL THERMAL BREACH' : 'COMPLIANT COLD-CHAIN'}
+              </span>
+              <span className={`text-sm font-mono font-bold tabular-nums ${isBreached ? 'text-rose-300' : 'text-emerald-400'}`}>
+                {simulatedTemp}°C
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">
+                (Target Range: 2.0°C - 4.0°C • Spinach Spec)
+              </span>
+            </div>
+
+            <p className={`text-xs mt-1 leading-relaxed ${isBreached ? 'text-rose-200' : 'text-slate-400'}`}>
+              {isBreached
+                ? 'CRITICAL ALERT: Reefer cargo temperature breached 8.6°C. Auto-diversion to nearest Lucknow Reefer Depot suggested!'
+                : 'IoT Telemetry Live: Carrier Transicold X4 nominal, humidity 95%, 0% thermal decay across transit legs.'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          disabled={isTogglingBreach}
+          onClick={handleToggleBreach}
+          className={`px-3.5 py-2 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0 ${
+            isBreached
+              ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-bold'
+              : 'bg-rose-600 hover:bg-rose-500 text-white font-bold'
+          }`}
+        >
+          {isBreached ? (
+            <>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>{isHindi ? 'शीतलन बहाल करें (3.6°C)' : 'Restore Chilling (3.6°C)'}</span>
+            </>
+          ) : (
+            <>
+              <BellRing className="w-3.5 h-3.5" />
+              <span>{isHindi ? 'तापमान उल्लंघन सिमुलेट करें (8.6°C)' : 'Simulate Temp Breach (8.6°C)'}</span>
+            </>
+          )}
+        </button>
+      </div>
+
       {/* AI Telemetry & Savings Comparison Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Route Distance Comparison */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+        <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-card">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
               {t('distanceComparison')}
             </span>
-            <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
               -{summary.distanceSavedPercent || 0}%
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900">
+            <span className="text-2xl font-bold text-slate-900 tabular-nums">
               {summary.optimizedDistanceKm || 0} km
             </span>
-            <span className="text-xs text-slate-400 line-through">
-              {summary.unoptimizedDistanceKm || 0} km
+            <span className="text-xs text-slate-400 line-through tabular-nums">
+              {summary.baselineDistanceKm || summary.unoptimizedDistanceKm || 0} km
             </span>
           </div>
-          <p className="text-xs text-emerald-700 font-semibold mt-2 flex items-center gap-1">
-            <TrendingDown className="w-3.5 h-3.5" />
-            <span>Saved {summary.distanceSavedKm || 0} km road transit</span>
+          <p className="text-xs text-emerald-700 mt-1 font-medium flex items-center gap-1">
+            <TrendingDown className="w-3 h-3" />
+            <span>{summary.distanceSavedKm || 0} km {t('deadheadEliminated')}</span>
           </p>
         </div>
 
@@ -513,6 +711,7 @@ export const RouteOptimizer = () => {
               isSimulating={isSimulating}
               vehicleName={currentVehicle.name}
               onStopClick={(leg, idx) => setActiveLegIndex(idx)}
+              roadPolyline={routeSolution?.routingEngine?.polylineCoordinates}
             />
 
             {/* Quick Waypoint Selector Stepper Strip */}

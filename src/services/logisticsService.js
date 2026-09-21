@@ -4,7 +4,7 @@
  * with local offline algorithmic fallback.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
 
 export const FALLBACK_HUBS = [
   {
@@ -364,5 +364,45 @@ export const logisticsService = {
         gpsTrackerId: 'TELEMETRY-KD-99',
       },
     };
+  },
+
+  /**
+   * Replan route when a farmer cancels pickup (PRD v2.0.0 Section 30)
+   */
+  async replanRoute({ farmStopIds, cancelledFarmId, destinationHubId, vehicleId }) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/logistics/replan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          farmStopIds,
+          cancelledFarmId,
+          destinationHubId,
+          vehicleId,
+        }),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Replan fallback:', e.message);
+    }
+    // Fallback: simply filter out cancelled farm and re-run
+    const remaining = (farmStopIds || []).filter((id) => id !== cancelledFarmId);
+    return this.optimizeRoute({ farmStopIds: remaining, destinationHubId, vehicleId });
+  },
+
+  /**
+   * Fetch cold-chain commodity profiles
+   */
+  async getCommodities() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/logistics/commodities`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch {}
+    return null;
   },
 };

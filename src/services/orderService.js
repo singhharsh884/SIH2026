@@ -3,7 +3,7 @@
  * Supports Consumer Shopping Cart and Bulk Buyer RFQ Procurement
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
 const CART_KEY = 'kisandirect_cart';
 const ORDERS_KEY = 'kisandirect_orders';
 const RFQ_KEY = 'kisandirect_rfqs';
@@ -235,4 +235,183 @@ export const orderService = {
     localStorage.setItem(RFQ_KEY, JSON.stringify(updated));
     return true;
   },
+
+  // ================= ORDERS & 4-STAGE RECONCILIATION =================
+  async getOrders() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && json.data.length > 0) {
+          return json.data;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch backend orders:', err.message);
+    }
+    return JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
+  },
+
+  async recordWeighing(orderId, stage, weightKg) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/weighing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage, weightKg }),
+      });
+      if (res.ok) {
+        return (await res.json()).data;
+      }
+    } catch (err) {
+      console.warn('Weighing reconciliation API fallback:', err.message);
+    }
+    return null;
+  },
+
+  async releasePayout(orderId) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/payout/release`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Payout release API fallback:', err.message);
+    }
+    return null;
+  },
+
+  // ================= QUALITY DISPUTES WORKFLOW =================
+  async getDisputes() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/disputes`);
+      if (res.ok) {
+        return (await res.json()).data;
+      }
+    } catch (err) {
+      console.warn('Disputes API fetch error:', err.message);
+    }
+    return [];
+  },
+
+  async raiseDispute(disputeData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/disputes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(disputeData),
+      });
+      if (res.ok) {
+        return (await res.json()).data;
+      }
+    } catch (err) {
+      console.warn('Raise dispute fallback:', err.message);
+    }
+    return null;
+  },
+
+  async resolveDispute(disputeId, resolutionData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/disputes/${disputeId}/resolve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resolutionData),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Resolve dispute fallback:', err.message);
+    }
+    return null;
+  },
+
+  // ================= FPO AGGREGATION =================
+  async aggregateFpoLots(payload) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/fpo/aggregate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        return (await res.json()).data;
+      }
+    } catch (err) {
+      console.warn('FPO aggregation API fallback:', err.message);
+    }
+    return null;
+  },
+
+  async getFpoConsignments() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/fpo/consignments`);
+      if (res.ok) {
+        return (await res.json()).data;
+      }
+    } catch (err) {
+      console.warn('FPO consignments API fallback:', err.message);
+    }
+    return [];
+  },
+
+  // ================= COLD-CHAIN TELEMETRY & BREACH SIMULATOR =================
+  async getTelemetry(routeId = 'route_nashik_mumbai_01') {
+    try {
+      const res = await fetch(`${API_BASE_URL}/telemetry/${routeId}`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Telemetry API fallback:', err.message);
+    }
+    return null;
+  },
+
+  async simulateBreach(tempC = 8.6, reset = false) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/telemetry/simulate-breach`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ simulatedTempC: tempC, reset }),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Simulate breach API fallback:', err.message);
+    }
+    return null;
+  },
+
+  // ================= END-TO-END LUCKNOW SIMULATION =================
+  async runLucknowSimulation(options = {}) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/simulation/lucknow`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(options),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Lucknow simulation API fallback:', err.message);
+    }
+    return null;
+  },
+
+  async getLucknowLiveFeed() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/simulation/lucknow/live-feed`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Lucknow live feed API fallback:', err.message);
+    }
+    return null;
+  },
 };
+

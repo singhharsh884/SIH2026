@@ -21,6 +21,8 @@ export const getRoleRedirectUrl = (role) => {
       return '/marketplace';
     case 'buyer':
       return '/buyer/dashboard';
+    case 'fpo':
+      return '/farmer/dashboard';
     default:
       return '/marketplace';
   }
@@ -45,13 +47,16 @@ export const register = async (req, res, next) => {
       contactPerson,
       businessType,
       location,
+      fpoName,
+      registrationNumber,
+      memberFarmersCount,
     } = req.body;
 
     // Validate role
-    if (!role || !['farmer', 'consumer', 'buyer'].includes(role)) {
+    if (!role || !['farmer', 'consumer', 'buyer', 'fpo'].includes(role)) {
       return res.status(400).json({
         success: false,
-        message: 'Valid role is required (farmer, consumer, or buyer)',
+        message: 'Valid role is required (farmer, consumer, buyer, or fpo)',
       });
     }
 
@@ -146,16 +151,17 @@ export const register = async (req, res, next) => {
  */
 export const login = async (req, res, next) => {
   try {
-    const { identifier, password, role, rememberMe } = req.body;
+    const { identifier, mobile, email, password, role, rememberMe } = req.body;
+    const loginId = identifier || mobile || email;
 
-    if (!identifier || !password) {
+    if (!loginId || !password) {
       return res.status(400).json({
         success: false,
         message: 'Please provide both mobile/email and password',
       });
     }
 
-    const cleanIdentifier = identifier.trim().toLowerCase();
+    const cleanIdentifier = String(loginId).trim().toLowerCase();
     const isEmail = cleanIdentifier.includes('@');
     const cleanMobile = cleanIdentifier.replace(/\D/g, '').slice(-10);
 

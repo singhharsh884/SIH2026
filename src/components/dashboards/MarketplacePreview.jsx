@@ -18,11 +18,13 @@ import {
   Phone,
   PhoneCall,
   MessageCircle,
+  QrCode,
 } from 'lucide-react';
 import { AgriSproutIcon } from '../common/AgriPattern';
 import { CartDrawer } from './CartDrawer';
 import { OrderSuccessModal } from './OrderSuccessModal';
 import { FarmerContactModal } from './FarmerContactModal';
+import { LotTraceModal } from './LotTraceModal';
 import { LanguageToggle } from '../common/LanguageToggle';
 import { orderService } from '../../services/orderService';
 import { cropService } from '../../services/cropService';
@@ -46,6 +48,7 @@ export const MarketplacePreview = ({ session, onLogout }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [completedOrder, setCompletedOrder] = useState(null);
+  const [traceLot, setTraceLot] = useState(null);
 
   const isHindi = language === 'hi';
 
@@ -410,16 +413,29 @@ export const MarketplacePreview = ({ session, onLogout }) => {
                           {p.harvestTime}
                         </p>
 
-                        {/* Direct Farmer Contact Pill */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedFarmer(p)}
-                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 hover:text-emerald-950 bg-emerald-100/90 hover:bg-emerald-200 px-2 py-0.5 rounded-full transition-all border border-emerald-300/60 cursor-pointer"
-                          title={t('contactFarmerBtn')}
-                        >
-                          <Phone className="w-2.5 h-2.5 text-emerald-700" />
-                          <span>{p.farmerMobile ? p.farmerMobile.replace('+91 ', '') : 'Call'}</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          {/* QR Lot Traceability Pill */}
+                          <button
+                            type="button"
+                            onClick={() => setTraceLot({ id: p.id, name: p.name })}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-900 hover:text-teal-950 bg-teal-100/90 hover:bg-teal-200 px-2 py-0.5 rounded-full transition-all border border-teal-300/60 cursor-pointer"
+                            title={isHindi ? 'खेत का QR व डिजिटल ऑडिट देखें' : 'View QR & Digital Audit Trail'}
+                          >
+                            <QrCode className="w-2.5 h-2.5 text-teal-700" />
+                            <span>{isHindi ? 'QR पहचान' : 'Trace QR'}</span>
+                          </button>
+
+                          {/* Direct Farmer Contact Pill */}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedFarmer(p)}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 hover:text-emerald-950 bg-emerald-100/90 hover:bg-emerald-200 px-2 py-0.5 rounded-full transition-all border border-emerald-300/60 cursor-pointer"
+                            title={t('contactFarmerBtn')}
+                          >
+                            <Phone className="w-2.5 h-2.5 text-emerald-700" />
+                            <span>{p.farmerMobile ? p.farmerMobile.replace('+91 ', '') : 'Call'}</span>
+                          </button>
+                        </div>
                       </div>
 
                       <h2 className="text-sm font-bold text-slate-900 line-clamp-1">{p.name}</h2>
@@ -513,6 +529,15 @@ export const MarketplacePreview = ({ session, onLogout }) => {
         onClose={() => setSelectedFarmer(null)}
         farmer={selectedFarmer}
       />
+
+      {/* QR Lot Traceability Modal (PRD v2.0.0 Section 22) */}
+      {traceLot && (
+        <LotTraceModal
+          cropId={traceLot.id}
+          cropName={traceLot.name}
+          onClose={() => setTraceLot(null)}
+        />
+      )}
     </div>
   );
 };

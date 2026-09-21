@@ -1,22 +1,24 @@
 import express from 'express';
 import {
   optimizeRoute,
+  replanRouteAfterCancellation,
   REGIONAL_HUBS,
   FARM_CLUSTERS,
   FLEET_VEHICLES,
+  COMMODITY_PROFILES,
 } from '../services/routeOptimizerService.js';
 
 const router = express.Router();
 
 /**
- * @desc    Run AI Multi-Stop Route Optimization
+ * @desc    Run Intelligent Multi-Stop Cold-Chain Route Optimization (OSRM + Capacity Feasibility)
  * @route   POST /api/logistics/optimize
  * @access  Public
  */
-router.post('/optimize', (req, res) => {
+router.post('/optimize', async (req, res) => {
   try {
     const { farmStopIds, destinationHubId, vehicleId, priority } = req.body;
-    const solution = optimizeRoute({
+    const solution = await optimizeRoute({
       farmStopIds,
       destinationHubId,
       vehicleId,
@@ -28,6 +30,37 @@ router.post('/optimize', (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to compute optimized route: ' + error.message,
+    });
+  }
+});
+
+/**
+ * @desc    Dynamic Route Re-Planning upon Farmer Pickup Cancellation (PRD v2.0.0 Section 30)
+ * @route   POST /api/logistics/replan
+ * @access  Public
+ */
+router.post('/replan', async (req, res) => {
+  try {
+    const { farmStopIds, cancelledFarmId, destinationHubId, vehicleId } = req.body;
+    if (!cancelledFarmId) {
+      return res.status(400).json({
+        success: false,
+        message: 'cancelledFarmId is required to simulate cancellation and replan route',
+      });
+    }
+
+    const replanned = await replanRouteAfterCancellation({
+      farmStopIds,
+      cancelledFarmId,
+      destinationHubId,
+      vehicleId,
+    });
+
+    res.status(200).json(replanned);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to replan route: ' + error.message,
     });
   }
 });
@@ -72,6 +105,18 @@ router.get('/fleet', (req, res) => {
 });
 
 /**
+ * @desc    Get commodity cold-chain temperature and shelf-life profiles (PRD v2.0.0 Section 13)
+ * @route   GET /api/logistics/commodities
+ * @access  Public
+ */
+router.get('/commodities', (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: COMMODITY_PROFILES,
+  });
+});
+
+/**
  * @desc    Get live tracking status of active shipments
  * @route   GET /api/logistics/active-fleet
  * @access  Public
@@ -93,6 +138,7 @@ router.get('/active-fleet', (req, res) => {
         stopsCompleted: '3 / 4',
         etaMinutes: 65,
         co2SavedKg: 42,
+        telemetryDisclosure: '[Simulated Reefer Sensor Stream]',
       },
     ],
   });

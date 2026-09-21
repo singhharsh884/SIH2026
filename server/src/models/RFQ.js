@@ -41,7 +41,7 @@ const RFQSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Bidding Open', 'Contract Active', 'In Transit', 'Completed'],
+      enum: ['Bidding Open', 'Contract Active', 'Contract Signed', 'In Transit', 'Completed'],
       default: 'Contract Active',
     },
   },
@@ -93,6 +93,10 @@ class MemoryRFQStore {
 
   async find() {
     return [...this.rfqs];
+  }
+
+  async findById(id) {
+    return this.rfqs.find((r) => r._id === id) || null;
   }
 
   async create(data) {
