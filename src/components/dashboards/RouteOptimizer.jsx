@@ -23,6 +23,8 @@ import {
   Calendar,
   AlertOctagon,
   BellRing,
+  Cpu,
+  AlertCircle,
 } from 'lucide-react';
 import { logisticsService, FALLBACK_HUBS, FALLBACK_FARMS, FALLBACK_VEHICLES } from '../../services/logisticsService';
 import { orderService } from '../../services/orderService';

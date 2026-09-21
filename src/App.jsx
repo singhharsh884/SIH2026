@@ -20,6 +20,7 @@ import { authService } from './services/authService';
 import { LanguageToggle } from './components/common/LanguageToggle';
 import { useLanguage } from './context/LanguageContext';
 import { KisanChatbotWidget } from './components/common/KisanChatbotWidget';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 export function App() {
   const { language } = useLanguage();
@@ -371,7 +372,11 @@ export function App() {
     return (
       <div className="min-h-screen bg-[#f8faf8] flex flex-col">
         <EnterpriseHeader />
-        <main className="flex-1">{dashboardContent}</main>
+        <main className="flex-1">
+          <ErrorBoundary fallbackTitle="Dashboard error">
+            {dashboardContent}
+          </ErrorBoundary>
+        </main>
 
         {/* Refined Docked Pitch Studio Trigger */}
         <button
