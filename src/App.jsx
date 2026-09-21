@@ -91,11 +91,11 @@ export function App() {
   };
 
   // Handle Google Social Login
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (googleAccount = null) => {
     setIsLoading(true);
     setApiError('');
     try {
-      const userSession = await authService.loginWithGoogle(role);
+      const userSession = await authService.loginWithGoogle(role, googleAccount);
       setSession(userSession);
       setIsLoading(false);
     } catch (err) {

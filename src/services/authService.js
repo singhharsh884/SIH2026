@@ -166,25 +166,33 @@ export const authService = {
   },
 
   /**
-   * Google Social Login
+   * Google Social Login (Supports realistic OAuth simulation)
    */
-  async loginWithGoogle(role) {
-    await new Promise((resolve) => setTimeout(resolve, 800));
+  async loginWithGoogle(role, customAccount = null) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    const name = customAccount?.name || 'Shreyash Singh';
+    const email = customAccount?.email || 'shreyash.singh2026@gmail.com';
+    const targetRole = customAccount?.role || role || 'farmer';
 
     const sessionData = {
-      token: 'mock-google-token-' + Math.random().toString(36).substring(2),
+      token: 'google-oauth-token-' + Math.random().toString(36).substring(2),
       user: {
-        name: 'Google Verified User',
-        email: 'user.google@kisandirect.in',
-        role,
-        badge: 'Google Authenticated',
+        name,
+        email,
+        role: targetRole,
+        businessName: targetRole === 'buyer' ? 'TastyGreens Chain' : 'Krishi Vikas Organic FPO',
+        location: targetRole === 'consumer' ? 'Bengaluru, KA' : 'Nashik, Maharashtra',
+        badge: 'Google Verified ' + (targetRole === 'farmer' ? 'FPO Partner' : targetRole === 'buyer' ? 'Bulk Buyer' : 'Consumer'),
       },
-      role,
-      redirectUrl: getRoleRedirectUrl(role),
+      role: targetRole,
+      redirectUrl: getRoleRedirectUrl(targetRole),
       loginTime: new Date().toISOString(),
+      source: 'Google OAuth 2.0 (Verified)',
     };
 
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
     return sessionData;
   },
 

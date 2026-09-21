@@ -54,7 +54,7 @@ export const AuthLayout = ({ children, mode = 'login' }) => {
       </div>
 
       {/* ================= RIGHT SECTION: AUTH CARD CONTAINER ================= */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 lg:p-12 xl:p-16 relative">
+      <div className="flex-1 flex items-center justify-center p-3 sm:p-6 lg:p-8 relative overflow-y-auto max-h-screen">
         {/* Subtle decorative background watermarks */}
         <div className="absolute top-6 right-8 opacity-40 pointer-events-none hidden md:block">
           <AgriLeafIcon className="w-16 h-16 text-emerald-300/40" />
@@ -64,9 +64,9 @@ export const AuthLayout = ({ children, mode = 'login' }) => {
         </div>
 
         {/* Centered White Card with subtle green/earth accents */}
-        <div className="w-full max-w-xl bg-white rounded-3xl p-6 sm:p-10 shadow-soft-lg border border-emerald-900/5 relative z-10 transition-all duration-300 hover:shadow-xl">
+        <div className="w-full max-w-lg bg-white rounded-2xl p-5 sm:p-7 shadow-soft-lg border border-emerald-900/5 relative z-10 transition-all duration-300 hover:shadow-xl my-auto">
           {/* Subtle Top Accent Ribbon */}
-          <div className="absolute -top-px left-8 right-8 h-1 bg-gradient-to-r from-emerald-400 via-emerald-600 to-amber-400 rounded-t-full" />
+          <div className="absolute -top-px left-6 right-6 h-1 bg-gradient-to-r from-emerald-400 via-emerald-600 to-amber-400 rounded-t-full" />
 
           {/* Render Active Form (Login or Register) */}
           {children}

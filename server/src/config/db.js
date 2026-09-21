@@ -8,14 +8,14 @@ try {
   // Ignore if custom dns is not permitted
 }
 
-// Disable Mongoose command buffering so operations never hang for 10s if Mongo is slow
-mongoose.set('bufferCommands', false);
-
+// Enable standard command buffering with 5s timeout so queries never crash if connection is establishing
 export let isConnectedToMongo = false;
 export let lastMongoError = null;
 
 const DEFAULT_ATLAS_URI =
   'mongodb+srv://singhharsh2655_db_user:yqPJ3l2Faio4SN4T@sih2026.cunpyyc.mongodb.net/harsh?retryWrites=true&w=majority';
+
+let cachedPromise = null;
 
 export const connectDB = async () => {
   if (mongoose.connection.readyState === 1) {
@@ -23,21 +23,29 @@ export const connectDB = async () => {
     return true;
   }
 
+  if (cachedPromise) {
+    return cachedPromise;
+  }
+
   const uri = process.env.MONGODB_URI || process.env.MONGO_URI || DEFAULT_ATLAS_URI;
 
-  try {
-    const conn = await mongoose.connect(uri, {
+  cachedPromise = mongoose
+    .connect(uri, {
       serverSelectionTimeoutMS: 5000,
+    })
+    .then((conn) => {
+      isConnectedToMongo = true;
+      lastMongoError = null;
+      console.log(`✅ [MongoDB] Connected to database: ${conn.connection.host}/${conn.connection.name}`);
+      return true;
+    })
+    .catch((error) => {
+      isConnectedToMongo = false;
+      lastMongoError = error.message;
+      console.warn(`⚠️ [MongoDB] Offline: using Resilient In-Memory Mode (${error.message})`);
+      cachedPromise = null;
+      return false;
     });
 
-    isConnectedToMongo = true;
-    lastMongoError = null;
-    console.log(`✅ [MongoDB] Connected to database: ${conn.connection.host}/${conn.connection.name}`);
-    return true;
-  } catch (error) {
-    isConnectedToMongo = false;
-    lastMongoError = error.message;
-    console.warn(`⚠️ [MongoDB] Offline: using Resilient In-Memory Mode (${error.message})`);
-    return false;
-  }
+  return cachedPromise;
 };
